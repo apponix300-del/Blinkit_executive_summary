@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Blinkit Analytics — Power BI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --yellow:#FFDA00;--dark:#0D0D14;--dark2:#14141F;--dark3:#1A1A2A;
+  --card:#1E1E2E;--card2:#252535;--border:rgba(255,255,255,0.07);
+  --text:#EEEEF5;--muted:#7878A0;--green:#22C55E;--red:#F43F5E;
+  --orange:#FB923C;--blue:#60A5FA;--purple:#A78BFA;--teal:#2DD4BF;
+  --pink:#F472B6;--fh:'Space Grotesk',sans-serif;--fb:'DM Sans',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--dark);color:var(--text);font-family:var(--fb);overflow:hidden;font-size:13px}
+.app{display:flex;height:100vh;width:100vw}
+
+/* SIDEBAR */
+.sidebar{width:210px;min-width:210px;background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-bolt{width:36px;height:36px;background:var(--yellow);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.logo-name{font-family:var(--fh);font-weight:700;font-size:15px;color:var(--yellow);line-height:1.1}
+.logo-tag{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.nav{flex:1;padding:10px 8px;overflow-y:auto}
+.nav-section{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:1px;transition:all .15s;user-select:none}
+.nav-item:hover{background:var(--card2);color:var(--text)}
+.nav-item.active{background:rgba(255,218,0,.1);color:var(--yellow)}
+.nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700}
+.nav-divider{height:1px;background:var(--border);margin:8px 10px}
+.sidebar-foot{padding:12px 16px;border-top:1px solid var(--border)}
+.sidebar-foot strong{display:block;font-size:12px;color:var(--text);margin-bottom:2px}
+.sidebar-foot span{font-size:10px;color:var(--muted)}
+
+/* TOPBAR */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:52px;min-height:52px;background:var(--dark2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px}
+.topbar-info{flex:1}
+.topbar-title{font-family:var(--fh);font-size:16px;font-weight:700;line-height:1}
+.topbar-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.filter-bar{display:flex;gap:8px;align-items:center}
+.fsel{background:var(--card);border:1px solid var(--border);color:var(--text);font-family:var(--fb);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;outline:none;transition:border .15s}
+.fsel:focus{border-color:var(--yellow)}
+.fbtn{background:var(--yellow);color:var(--dark);font-size:11px;font-weight:700;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-family:var(--fh);transition:opacity .15s}
+.fbtn:hover{opacity:.85}
+.dot-live{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.content::-webkit-scrollbar{width:4px}
+.content::-webkit-scrollbar-thumb{background:var(--card2);border-radius:4px}
+.page{display:none;flex-direction:column;gap:12px;animation:fadeUp .22s ease}
+.page.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* PAGE HEADER */
+.ph{display:flex;align-items:center;gap:10px}
+.ph-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.ph-title{font-family:var(--fh);font-size:15px;font-weight:700}
+.ph-sub{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* GRIDS */
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g31{display:grid;grid-template-columns:3fr 1fr;gap:12px}
+.g13{display:grid;grid-template-columns:1fr 3fr;gap:12px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.g12{display:grid;grid-template-columns:1fr 2fr;gap:12px}
+.g211{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+
+/* KPI CARDS */
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;position:relative;overflow:hidden;cursor:default;transition:transform .15s,box-shadow .15s}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.kpi-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0}
+.kpi-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;font-weight:600}
+.kpi-val{font-family:var(--fh);font-size:21px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:3px}
+.kpi-badge{position:absolute;top:11px;right:11px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.badge-up{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-down{background:rgba(244,63,94,.15);color:var(--red)}
+.badge-warn{background:rgba(251,146,60,.15);color:var(--orange)}
+.badge-neu{background:rgba(96,165,250,.12);color:var(--blue)}
+
+/* CHART CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title{font-family:var(--fh);font-size:12px;font-weight:600}
+.card-tag{font-size:9px;text-transform:uppercase;letter-spacing:.07em;background:var(--dark3);color:var(--muted);padding:2px 7px;border-radius:4px}
+.chart-box{position:relative}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{background:var(--dark3);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.07em;padding:7px 10px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.035);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.pill{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700}
+.pg{background:rgba(34,197,94,.12);color:var(--green)}
+.pr{background:rgba(244,63,94,.12);color:var(--red)}
+.po{background:rgba(251,146,60,.12);color:var(--orange)}
+.pb{background:rgba(96,165,250,.12);color:var(--blue)}
+.py{background:rgba(255,218,0,.12);color:var(--yellow)}
+.pp{background:rgba(167,139,250,.12);color:var(--purple)}
+
+/* PROGRESS */
+.prog-track{height:5px;background:var(--dark3);border-radius:4px;overflow:hidden;margin-top:3px}
+.prog-fill{height:100%;border-radius:4px;transition:width .6s ease}
+
+/* SEGMENT TILES */
+.seg-tiles{display:flex;gap:8px;flex-wrap:wrap}
+.seg-tile{flex:1;min-width:90px;background:var(--dark3);border-radius:8px;padding:10px 12px;text-align:center;border:1px solid var(--border)}
+.seg-tile .st-num{font-family:var(--fh);font-size:19px;font-weight:700;line-height:1}
+.seg-tile .st-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.seg-tile .st-sub{font-size:10px;font-weight:600;margin-top:4px}
+
+/* INSIGHT CARDS */
+.insight{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:12px;transition:border-color .15s}
+.insight:hover{border-color:rgba(255,218,0,.25)}
+.insight-ico{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.insight-body{flex:1;min-width:0}
+.insight-body .it{font-family:var(--fh);font-size:12px;font-weight:600;margin-bottom:3px}
+.insight-body .ev{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:5px}
+.insight-body .rc{font-size:11px;color:var(--yellow);font-weight:500;margin-bottom:4px}
+.insight-body .im{font-size:10px;color:var(--teal)}
+.ipri{flex-shrink:0;font-size:9px;font-weight:700;padding:3px 8px;border-radius:5px;height:fit-content;margin-top:2px}
+.ic{background:rgba(244,63,94,.12);color:var(--red)}
+.ih{background:rgba(251,146,60,.12);color:var(--orange)}
+.im2{background:rgba(255,218,0,.1);color:var(--yellow)}
+
+/* WATERFALL */
+.wf-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.wf-lbl{font-size:10px;color:var(--muted);width:140px;text-align:right;flex-shrink:0}
+.wf-track{flex:1;height:22px;position:relative;background:var(--dark3);border-radius:4px;overflow:hidden}
+.wf-bar{height:100%;display:flex;align-items:center;padding:0 7px;font-size:10px;font-weight:700;color:#fff;border-radius:4px;white-space:nowrap}
+
+/* ZONE TABLE */
+.zone-bar{background:rgba(255,218,0,.2);border-radius:2px;height:6px;display:inline-block;vertical-align:middle}
+
+/* HEATMAP */
+#heatmap-grid{font-size:8px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-bolt">⚡</div>
+    <div>
+      <div class="logo-name">Blinkit</div>
+      <div class="logo-tag">Analytics Suite</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Dashboards</div>
+    <div class="nav-item active" onclick="gp('executive',this)"><span class="nav-icon">📊</span>Executive Summary</div>
+    <div class="nav-item" onclick="gp('sales',this)"><span class="nav-icon">📈</span>Sales &amp; Revenue</div>
+    <div class="nav-item" onclick="gp('customers',this)"><span class="nav-icon">👥</span>Customer 360</div>
+    <div class="nav-item" onclick="gp('products',this)"><span class="nav-icon">📦</span>Product Intel</div>
+    <div class="nav-item" onclick="gp('operations',this)">
+      <span class="nav-icon">🏪</span>Operations &amp; SLA
+      <span class="nav-badge">!</span>
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section">Reports</div>
+    <div class="nav-item" onclick="gp('insights',this)"><span class="nav-icon">💡</span>Insights &amp; Recs</div>
+    <div class="nav-item" onclick="gp('datamodel',this)"><span class="nav-icon">🔗</span>Data Model</div>
+  </nav>
+  <div class="sidebar-foot">
+    <strong>Jan 2023 – Jul 2024</strong>
+    <span>30K orders · 8 cities · 120 stores</span>
+  </div>
+</aside>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-info">
+      <div class="topbar-title" id="tb-title">Executive Summary</div>
+      <div class="topbar-sub" id="tb-sub">18-month overview · Jan 2023 – Jul 2024</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)">
+      <div class="dot-live"></div>Live Data
+    </div>
+    <div class="filter-bar">
+      <select class="fsel" id="f-city" onchange="applyFilter()">
+        <option value="all">All Cities</option>
+        <option>Bengaluru</option><option>Mumbai</option><option>Delhi</option>
+        <option>Hyderabad</option><option>Pune</option><option>Chennai</option>
+        <option>Kolkata</option><option>Ahmedabad</option>
+      </select>
+      <button class="fbtn" onclick="resetFilter()">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ░░░░░░░░░ PAGE: EXECUTIVE ░░░░░░░░░ -->
+  <div class="page active" id="page-executive">
+    <div class="ph">
+      <div class="ph-icon" style="background:rgba(255,218,0,.1)">📊</div>
+      <div><div class="ph-title">Executive Summary</div><div class="ph-sub">Business health at a glance · 30,000 orders · 8 cities · 120 dark stores</div></div>
+    </div>
+    <div class="g6" id="exec-kpis"></div>
+    <div class="g31">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📈 Monthly GMV vs Net Revenue</span><span class="card-tag">18 Months</span></div>
+        <div class="chart-box" style="height:190px"><canvas id="c-revtrend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🔄 Order Status</span><span class="card-tag">Split</span></div>
+        <div class="chart-box" style="height:190px"><canvas id="c-status"></canvas></div>
+      </div>
+    </div>
+    <div class="g3">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🏙️ Revenue by City</span><span class="card-tag">Delivered</span></div>
+        <div class="chart-box" style="height:170px"><canvas id="c-cityrev"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">💳 Payment Mix</span><span class="card-tag">Orders</span></div>
+        <div class="chart-box" style="height:170px"><canvas id="c-pay"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📦 Category Revenue</span><span class="card-tag">Share</span></div>
+        <div class="chart-box" style="height:170px"><canvas id="c-catpie"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░░░░░░░░ PAGE: SALES ░░░░░░░░░ -->
+  <div class="page" id="page-sales">
+    <div class="ph">
+      <div class="ph-icon" style="background:rgba(34,197,94,.1)">📈</div>
+      <div><div class="ph-title">Sales &amp; Revenue</div><div class="ph-sub">Trend analysis, AOV, peak ordering patterns and promo impact</div></div>
+    </div>
+    <div class="g5" id="sales-kpis"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📊 Monthly AOV Trend</span><span class="card-tag">₹ per Order</span></div>
+        <div class="chart-box" style="height:175px"><canvas id="c-aov"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📦 Category Revenue &amp; Gross Profit</span><span class="card-tag">₹ INR</span></div>
+        <div class="chart-box" style="height:175px"><canvas id="c-catbar"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">🕐 Order Heatmap — Day × Hour (Orders Volume)</span><span class="card-tag">All 30K Orders</span></div>
+      <div id="heatmap-grid" style="margin-top:4px"></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">👥 New vs Returning Customers</span><span class="card-tag">Monthly</span></div>
+        <div class="chart-box" style="height:160px"><canvas id="c-newret"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">💳 Payment Method: Orders vs Cancel Rate</span><span class="card-tag">Dual Axis</span></div>
+        <div class="chart-box" style="height:160px"><canvas id="c-paycancel"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🎟️ Promo vs No-Promo: AOV Comparison</span><span class="card-tag">Impact</span></div>
+        <div class="chart-box" style="height:140px"><canvas id="c-promo"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🏆 Top 20 Zones by Revenue</span><span class="card-tag">City → Zone</span></div>
+        <div id="zone-table" style="max-height:170px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░░░░░░░░ PAGE: CUSTOMERS ░░░░░░░░░ -->
+  <div class="page" id="page-customers">
+    <div class="ph">
+      <div class="ph-icon" style="background:rgba(96,165,250,.1)">👥</div>
+      <div><div class="ph-title">Customer 360</div><div class="ph-sub">RFM segmentation, lifetime value, cohort analysis and churn signals</div></div>
+    </div>
+    <div class="g4" id="cust-kpis"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🎯 RFM Segment Distribution</span><span class="card-tag">Customer Count</span></div>
+        <div class="chart-box" style="height:170px"><canvas id="c-rfm"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">💰 Avg LTV by RFM Segment</span><span class="card-tag">₹ Lifetime Value</span></div>
+        <div class="chart-box" style="height:170px"><canvas id="c-ltv"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">🏅 Segment Performance Matrix</span><span class="card-tag">Gold · Silver · Bronze + RFM</span></div>
+      <div class="seg-tiles" id="seg-tiles" style="margin-top:4px"></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🧑 LTV by Age Group</span><span class="card-tag">Avg ₹ Spend</span></div>
+        <div class="chart-box" style="height:155px"><canvas id="c-age"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🎖️ Gold / Silver / Bronze Split</span><span class="card-tag">By Count</span></div>
+        <div class="chart-box" style="height:155px"><canvas id="c-seg"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░░░░░░░░ PAGE: PRODUCTS ░░░░░░░░░ -->
+  <div class="page" id="page-products">
+    <div class="ph">
+      <div class="ph-icon" style="background:rgba(251,146,60,.1)">📦</div>
+      <div><div class="ph-title">Product Intelligence</div><div class="ph-sub">Category margins, SKU velocity, returns analysis and gross profit waterfall</div></div>
+    </div>
+    <div class="g5" id="prod-kpis"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">💚 Gross Margin % by Category</span><span class="card-tag">Target 22%</span></div>
+        <div class="chart-box" style="height:180px"><canvas id="c-catmargin"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">↩️ Returns by Reason</span><span class="card-tag">Count + Refund</span></div>
+        <div class="chart-box" style="height:180px"><canvas id="c-ret"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">🏆 Top 12 SKUs by Revenue</span><span class="card-tag">with Gross Margin %</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="sku-tbl"></table></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">💸 Gross Profit Waterfall by Category</span><span class="card-tag">Revenue → GP</span></div>
+        <div id="waterfall" style="margin-top:4px"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📦 Units Sold by Category</span><span class="card-tag">Qty</span></div>
+        <div class="chart-box" style="height:200px"><canvas id="c-units"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ░░░░░░░░░ PAGE: OPERATIONS ░░░░░░░░░ -->
+  <div class="page" id="page-operations">
+    <div class="ph">
+      <div class="ph-icon" style="background:rgba(244,63,94,.1)">🏪</div>
+      <div><div class="ph-title">Operations &amp; SLA</div><div class="ph-sub">Dark store health, delivery SLA breach and fulfilment metrics</div></div>
+    </div>
+    <div class="g4" id="ops-kpis"></div>
+    <div class="g21">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">⏱️ SLA Breach % Monthly Trend</span><span class="card-tag">Target &lt;10%</span></div>
+        <div class="chart-box" style="height:175px"><canvas id="c-sla"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🏙️ Delivery Time by City</span><span class="card-tag">Avg min</span></div>
+        <div class="chart-box" style="height:175px"><canvas id="c-citydelivery"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🏆 Top 10 Stores — Order Volume</span></div>
+        <div class="tbl-wrap"><table class="tbl" id="tbl-topstore"></table></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">⚡ Top 10 Fastest Stores</span></div>
+        <div class="tbl-wrap"><table class="tbl" id="tbl-faststore"></table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">📊 Store Performance Overview (Top 25)</span><span class="card-tag">Orders + Rating + SLA</span></div>
+      <div class="chart-box" style="height:180px"><canvas id="c-storeperf"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ░░░░░░░░░ PAGE: INSIGHTS ░░░░░░░░░ -->
+  <div class="page" id="page-insights">
+    <div class="ph">
+      <div class="ph-icon" style="background:rgba(167,139,250,.1)">💡</div>
+      <div><div class="ph-title">Business Insights &amp; Recommendations</div><div class="ph-sub">Evidence-based actions derived from 30,000 orders across 18 months</div></div>
+    </div>
+    <div class="g4" id="ins-kpis"></div>
+    <div id="insights-list" style="display:flex;flex-direction:column;gap:9px"></div>
+  </div>
+
+  <!-- ░░░░░░░░░ PAGE: DATA MODEL ░░░░░░░░░ -->
+  <div class="page" id="page-datamodel">
+    <div class="ph">
+      <div class="ph-icon" style="background:rgba(45,212,191,.1)">🔗</div>
+      <div><div class="ph-title">Data Model &amp; Lifecycle</div><div class="ph-sub">Star schema relationships, table descriptions and Power BI connection guide</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">⭐ Star Schema Overview</span><span class="card-tag">7 Tables</span></div>
+        <div id="schema-viz" style="padding:8px 0"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🔄 Data Lifecycle</span><span class="card-tag">End-to-End</span></div>
+        <div id="lifecycle-viz" style="padding:8px 0"></div>
+      </div>
+    </div>
+    <div class="g3">
+      <div class="card" id="dm-tables-card">
+        <div class="card-hdr"><span class="card-title">📋 Table Descriptions</span></div>
+        <div id="dm-tables" style="margin-top:4px"></div>
+      </div>
+      <div class="card" style="grid-column:span 2">
+        <div class="card-hdr"><span class="card-title">⚡ Key DAX Measures</span><span class="card-tag">Copy-paste ready</span></div>
+        <div id="dax-list" style="margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// ═══ DATA ═══════════════════════════════════════════════════
+const D = {"kpis": {"total_gmv": 38.76, "total_rev": 32.77, "total_orders": 30000, "del_orders": 26456, "cancel_rate": 7.9, "return_rate": 3.9, "avg_delivery": 21.5, "avg_rating": 3.99, "gm_pct": 25.2, "aov": 1239.0, "active_custs": 7805, "sla_breach": 53.7, "total_discount": 1.71, "total_gp": 11.69, "stores": 120, "skus": 48}, "rev_month": [{"Month": "2023-01", "GMV": 2240803.28, "Revenue": 2138608.14, "Orders": 1741, "Discount": 104495.14, "DeliveryFee": 2300, "AOV": 1228.38}, {"Month": "2023-02", "GMV": 1977747.16, "Revenue": 1897426.59, "Orders": 1532, "Discount": 82545.57, "DeliveryFee": 2225, "AOV": 1238.53}, {"Month": "2023-03", "GMV": 2187755.79, "Revenue": 2092869.21, "Orders": 1691, "Discount": 96961.58, "DeliveryFee": 2075, "AOV": 1237.65}, {"Month": "2023-04", "GMV": 2125415.47, "Revenue": 2033041.9, "Orders": 1638, "Discount": 94348.57, "DeliveryFee": 1975, "AOV": 1241.17}, {"Month": "2023-05", "GMV": 2099426.9, "Revenue": 2003646.35, "Orders": 1636, "Discount": 98330.55, "DeliveryFee": 2550, "AOV": 1224.72}, {"Month": "2023-06", "GMV": 2140415.88, "Revenue": 2045861.77, "Orders": 1650, "Discount": 96529.11, "DeliveryFee": 1975, "AOV": 1239.92}, {"Month": "2023-07", "GMV": 2174743.1, "Revenue": 2082679.41, "Orders": 1675, "Discount": 94388.69, "DeliveryFee": 2325, "AOV": 1243.39}, {"Month": "2023-08", "GMV": 2235137.73, "Revenue": 2140319.12, "Orders": 1735, "Discount": 96918.61, "DeliveryFee": 2100, "AOV": 1233.61}, {"Month": "2023-09", "GMV": 2118415.49, "Revenue": 2026754.61, "Orders": 1612, "Discount": 93635.88, "DeliveryFee": 1975, "AOV": 1257.29}, {"Month": "2023-10", "GMV": 2222692.49, "Revenue": 2128529.56, "Orders": 1681, "Discount": 95912.93, "DeliveryFee": 1750, "AOV": 1266.23}, {"Month": "2023-11", "GMV": 2035439.47, "Revenue": 1945175.98, "Orders": 1621, "Discount": 92313.49, "DeliveryFee": 2050, "AOV": 1199.99}, {"Month": "2023-12", "GMV": 2174835.85, "Revenue": 2080759.8, "Orders": 1676, "Discount": 95951.05, "DeliveryFee": 1875, "AOV": 1241.5}, {"Month": "2024-01", "GMV": 2249424.14, "Revenue": 2156902.65, "Orders": 1701, "Discount": 94046.49, "DeliveryFee": 1525, "AOV": 1268.02}, {"Month": "2024-02", "GMV": 2040288.57, "Revenue": 1948590.4, "Orders": 1592, "Discount": 93923.17, "DeliveryFee": 2225, "AOV": 1223.99}, {"Month": "2024-03", "GMV": 2168455.48, "Revenue": 2071911.68, "Orders": 1691, "Discount": 98343.8, "DeliveryFee": 1800, "AOV": 1225.26}, {"Month": "2024-04", "GMV": 2163573.99, "Revenue": 2071036.6, "Orders": 1693, "Discount": 95187.39, "DeliveryFee": 2650, "AOV": 1223.29}, {"Month": "2024-05", "GMV": 2186345.83, "Revenue": 2100090.88, "Orders": 1679, "Discount": 88404.95, "DeliveryFee": 2150, "AOV": 1250.8}, {"Month": "2024-06", "GMV": 2065568.1, "Revenue": 1974006.41, "Orders": 1642, "Discount": 93836.69, "DeliveryFee": 2275, "AOV": 1202.2}, {"Month": "2024-07", "GMV": 149025.17, "Revenue": 141554.0, "Orders": 114, "Discount": 7646.17, "DeliveryFee": 175, "AOV": 1241.7}], "city_stats": [{"City": "Ahmedabad", "Revenue": 4171086.0, "Orders": 3353, "AvgDelivery": 21.56, "AvgRating": 4.01}, {"City": "Bengaluru", "Revenue": 3911759.0, "Orders": 3199, "AvgDelivery": 21.53, "AvgRating": 3.99}, {"City": "Chennai", "Revenue": 3994025.0, "Orders": 3202, "AvgDelivery": 21.51, "AvgRating": 4.01}, {"City": "Delhi", "Revenue": 4107346.0, "Orders": 3276, "AvgDelivery": 21.68, "AvgRating": 3.97}, {"City": "Hyderabad", "Revenue": 4153627.0, "Orders": 3339, "AvgDelivery": 21.52, "AvgRating": 4.01}, {"City": "Kolkata", "Revenue": 4075498.0, "Orders": 3317, "AvgDelivery": 21.73, "AvgRating": 3.99}, {"City": "Mumbai", "Revenue": 4226726.0, "Orders": 3422, "AvgDelivery": 21.28, "AvgRating": 4.0}, {"City": "Pune", "Revenue": 4128818.0, "Orders": 3348, "AvgDelivery": 21.35, "AvgRating": 3.98}], "cat_stats": [{"Category": "Meat & Seafood", "Revenue": 11011810, "COGS": 8809448.0, "GrossProfit": 2202362.0, "Units": 33119, "Margin": 20.0}, {"Category": "Baby Care", "Revenue": 10223855, "COGS": 6645505.75, "GrossProfit": 3578349.25, "Units": 32752, "Margin": 35.0}, {"Category": "Personal Care", "Revenue": 6227640, "COGS": 4234795.2, "GrossProfit": 1992844.8, "Units": 32537, "Margin": 32.0}, {"Category": "Staples & Kitchen", "Revenue": 6117967, "COGS": 5139092.28, "GrossProfit": 978874.72, "Units": 32622, "Margin": 16.0}, {"Category": "Household", "Revenue": 5395615, "COGS": 4046711.25, "GrossProfit": 1348903.75, "Units": 32993, "Margin": 25.0}, {"Category": "Dairy & Breakfast", "Revenue": 3831056, "COGS": 3141465.92, "GrossProfit": 689590.08, "Units": 32524, "Margin": 18.0}, {"Category": "Snacks & Beverages", "Revenue": 1964240, "COGS": 1414252.8, "GrossProfit": 549987.2, "Units": 32341, "Margin": 28.0}, {"Category": "Fruits & Vegetables", "Revenue": 1573789, "COGS": 1227555.42, "GrossProfit": 346233.58, "Units": 33096, "Margin": 22.0}], "pay_stats": [{"Payment_Method": "Blinkit Wallet", "Orders": 6006, "Revenue": 7478776.74, "CancelRate": 7.46}, {"Payment_Method": "Cash on Delivery", "Orders": 6015, "Revenue": 7404193.38, "CancelRate": 8.21}, {"Payment_Method": "Credit Card", "Orders": 5955, "Revenue": 7417117.79, "CancelRate": 8.19}, {"Payment_Method": "Debit Card", "Orders": 5946, "Revenue": 7297035.98, "CancelRate": 7.74}, {"Payment_Method": "UPI", "Orders": 6078, "Revenue": 7482641.17, "CancelRate": 7.75}], "status_stats": [{"Order_Status": "Cancelled", "Count": 2361, "Pct": 7.9}, {"Order_Status": "Delivered", "Count": 26456, "Pct": 88.2}, {"Order_Status": "Returned", "Count": 1183, "Pct": 3.9}], "heatmap_data": [{"day": "Monday", "hour": 0, "orders": 192}, {"day": "Monday", "hour": 1, "orders": 165}, {"day": "Monday", "hour": 2, "orders": 191}, {"day": "Monday", "hour": 3, "orders": 184}, {"day": "Monday", "hour": 4, "orders": 197}, {"day": "Monday", "hour": 5, "orders": 180}, {"day": "Monday", "hour": 6, "orders": 191}, {"day": "Monday", "hour": 7, "orders": 176}, {"day": "Monday", "hour": 8, "orders": 163}, {"day": "Monday", "hour": 9, "orders": 160}, {"day": "Monday", "hour": 10, "orders": 183}, {"day": "Monday", "hour": 11, "orders": 188}, {"day": "Monday", "hour": 12, "orders": 176}, {"day": "Monday", "hour": 13, "orders": 222}, {"day": "Monday", "hour": 14, "orders": 176}, {"day": "Monday", "hour": 15, "orders": 190}, {"day": "Monday", "hour": 16, "orders": 176}, {"day": "Monday", "hour": 17, "orders": 171}, {"day": "Monday", "hour": 18, "orders": 183}, {"day": "Monday", "hour": 19, "orders": 164}, {"day": "Monday", "hour": 20, "orders": 163}, {"day": "Monday", "hour": 21, "orders": 202}, {"day": "Monday", "hour": 22, "orders": 174}, {"day": "Monday", "hour": 23, "orders": 170}, {"day": "Tuesday", "hour": 0, "orders": 169}, {"day": "Tuesday", "hour": 1, "orders": 181}, {"day": "Tuesday", "hour": 2, "orders": 189}, {"day": "Tuesday", "hour": 3, "orders": 175}, {"day": "Tuesday", "hour": 4, "orders": 191}, {"day": "Tuesday", "hour": 5, "orders": 175}, {"day": "Tuesday", "hour": 6, "orders": 196}, {"day": "Tuesday", "hour": 7, "orders": 172}, {"day": "Tuesday", "hour": 8, "orders": 188}, {"day": "Tuesday", "hour": 9, "orders": 173}, {"day": "Tuesday", "hour": 10, "orders": 195}, {"day": "Tuesday", "hour": 11, "orders": 186}, {"day": "Tuesday", "hour": 12, "orders": 202}, {"day": "Tuesday", "hour": 13, "orders": 170}, {"day": "Tuesday", "hour": 14, "orders": 175}, {"day": "Tuesday", "hour": 15, "orders": 184}, {"day": "Tuesday", "hour": 16, "orders": 173}, {"day": "Tuesday", "hour": 17, "orders": 162}, {"day": "Tuesday", "hour": 18, "orders": 176}, {"day": "Tuesday", "hour": 19, "orders": 190}, {"day": "Tuesday", "hour": 20, "orders": 159}, {"day": "Tuesday", "hour": 21, "orders": 173}, {"day": "Tuesday", "hour": 22, "orders": 175}, {"day": "Tuesday", "hour": 23, "orders": 152}, {"day": "Wednesday", "hour": 0, "orders": 172}, {"day": "Wednesday", "hour": 1, "orders": 189}, {"day": "Wednesday", "hour": 2, "orders": 188}, {"day": "Wednesday", "hour": 3, "orders": 196}, {"day": "Wednesday", "hour": 4, "orders": 181}, {"day": "Wednesday", "hour": 5, "orders": 174}, {"day": "Wednesday", "hour": 6, "orders": 177}, {"day": "Wednesday", "hour": 7, "orders": 149}, {"day": "Wednesday", "hour": 8, "orders": 173}, {"day": "Wednesday", "hour": 9, "orders": 197}, {"day": "Wednesday", "hour": 10, "orders": 195}, {"day": "Wednesday", "hour": 11, "orders": 189}, {"day": "Wednesday", "hour": 12, "orders": 190}, {"day": "Wednesday", "hour": 13, "orders": 166}, {"day": "Wednesday", "hour": 14, "orders": 157}, {"day": "Wednesday", "hour": 15, "orders": 185}, {"day": "Wednesday", "hour": 16, "orders": 166}, {"day": "Wednesday", "hour": 17, "orders": 177}, {"day": "Wednesday", "hour": 18, "orders": 190}, {"day": "Wednesday", "hour": 19, "orders": 154}, {"day": "Wednesday", "hour": 20, "orders": 172}, {"day": "Wednesday", "hour": 21, "orders": 190}, {"day": "Wednesday", "hour": 22, "orders": 185}, {"day": "Wednesday", "hour": 23, "orders": 171}, {"day": "Thursday", "hour": 0, "orders": 195}, {"day": "Thursday", "hour": 1, "orders": 170}, {"day": "Thursday", "hour": 2, "orders": 165}, {"day": "Thursday", "hour": 3, "orders": 195}, {"day": "Thursday", "hour": 4, "orders": 186}, {"day": "Thursday", "hour": 5, "orders": 182}, {"day": "Thursday", "hour": 6, "orders": 175}, {"day": "Thursday", "hour": 7, "orders": 176}, {"day": "Thursday", "hour": 8, "orders": 199}, {"day": "Thursday", "hour": 9, "orders": 175}, {"day": "Thursday", "hour": 10, "orders": 186}, {"day": "Thursday", "hour": 11, "orders": 181}, {"day": "Thursday", "hour": 12, "orders": 171}, {"day": "Thursday", "hour": 13, "orders": 188}, {"day": "Thursday", "hour": 14, "orders": 171}, {"day": "Thursday", "hour": 15, "orders": 193}, {"day": "Thursday", "hour": 16, "orders": 153}, {"day": "Thursday", "hour": 17, "orders": 170}, {"day": "Thursday", "hour": 18, "orders": 181}, {"day": "Thursday", "hour": 19, "orders": 176}, {"day": "Thursday", "hour": 20, "orders": 169}, {"day": "Thursday", "hour": 21, "orders": 179}, {"day": "Thursday", "hour": 22, "orders": 170}, {"day": "Thursday", "hour": 23, "orders": 204}, {"day": "Friday", "hour": 0, "orders": 198}, {"day": "Friday", "hour": 1, "orders": 182}, {"day": "Friday", "hour": 2, "orders": 174}, {"day": "Friday", "hour": 3, "orders": 193}, {"day": "Friday", "hour": 4, "orders": 193}, {"day": "Friday", "hour": 5, "orders": 196}, {"day": "Friday", "hour": 6, "orders": 178}, {"day": "Friday", "hour": 7, "orders": 182}, {"day": "Friday", "hour": 8, "orders": 148}, {"day": "Friday", "hour": 9, "orders": 166}, {"day": "Friday", "hour": 10, "orders": 153}, {"day": "Friday", "hour": 11, "orders": 159}, {"day": "Friday", "hour": 12, "orders": 178}, {"day": "Friday", "hour": 13, "orders": 182}, {"day": "Friday", "hour": 14, "orders": 181}, {"day": "Friday", "hour": 15, "orders": 202}, {"day": "Friday", "hour": 16, "orders": 188}, {"day": "Friday", "hour": 17, "orders": 167}, {"day": "Friday", "hour": 18, "orders": 188}, {"day": "Friday", "hour": 19, "orders": 184}, {"day": "Friday", "hour": 20, "orders": 173}, {"day": "Friday", "hour": 21, "orders": 190}, {"day": "Friday", "hour": 22, "orders": 165}, {"day": "Friday", "hour": 23, "orders": 178}, {"day": "Saturday", "hour": 0, "orders": 205}, {"day": "Saturday", "hour": 1, "orders": 169}, {"day": "Saturday", "hour": 2, "orders": 171}, {"day": "Saturday", "hour": 3, "orders": 174}, {"day": "Saturday", "hour": 4, "orders": 206}, {"day": "Saturday", "hour": 5, "orders": 177}, {"day": "Saturday", "hour": 6, "orders": 188}, {"day": "Saturday", "hour": 7, "orders": 178}, {"day": "Saturday", "hour": 8, "orders": 179}, {"day": "Saturday", "hour": 9, "orders": 186}, {"day": "Saturday", "hour": 10, "orders": 171}, {"day": "Saturday", "hour": 11, "orders": 202}, {"day": "Saturday", "hour": 12, "orders": 204}, {"day": "Saturday", "hour": 13, "orders": 188}, {"day": "Saturday", "hour": 14, "orders": 171}, {"day": "Saturday", "hour": 15, "orders": 165}, {"day": "Saturday", "hour": 16, "orders": 181}, {"day": "Saturday", "hour": 17, "orders": 148}, {"day": "Saturday", "hour": 18, "orders": 166}, {"day": "Saturday", "hour": 19, "orders": 195}, {"day": "Saturday", "hour": 20, "orders": 155}, {"day": "Saturday", "hour": 21, "orders": 199}, {"day": "Saturday", "hour": 22, "orders": 170}, {"day": "Saturday", "hour": 23, "orders": 151}, {"day": "Sunday", "hour": 0, "orders": 171}, {"day": "Sunday", "hour": 1, "orders": 173}, {"day": "Sunday", "hour": 2, "orders": 187}, {"day": "Sunday", "hour": 3, "orders": 188}, {"day": "Sunday", "hour": 4, "orders": 168}, {"day": "Sunday", "hour": 5, "orders": 161}, {"day": "Sunday", "hour": 6, "orders": 161}, {"day": "Sunday", "hour": 7, "orders": 178}, {"day": "Sunday", "hour": 8, "orders": 194}, {"day": "Sunday", "hour": 9, "orders": 136}, {"day": "Sunday", "hour": 10, "orders": 190}, {"day": "Sunday", "hour": 11, "orders": 170}, {"day": "Sunday", "hour": 12, "orders": 208}, {"day": "Sunday", "hour": 13, "orders": 167}, {"day": "Sunday", "hour": 14, "orders": 183}, {"day": "Sunday", "hour": 15, "orders": 195}, {"day": "Sunday", "hour": 16, "orders": 177}, {"day": "Sunday", "hour": 17, "orders": 163}, {"day": "Sunday", "hour": 18, "orders": 172}, {"day": "Sunday", "hour": 19, "orders": 173}, {"day": "Sunday", "hour": 20, "orders": 187}, {"day": "Sunday", "hour": 21, "orders": 159}, {"day": "Sunday", "hour": 22, "orders": 184}, {"day": "Sunday", "hour": 23, "orders": 147}], "sla_month": [{"Month": "2023-01", "AvgDelivery": 21.71, "SLABreach": 54.77, "SLA15": 27.65}, {"Month": "2023-02", "AvgDelivery": 21.01, "SLABreach": 50.91, "SLA15": 31.94}, {"Month": "2023-03", "AvgDelivery": 22.05, "SLABreach": 56.71, "SLA15": 27.13}, {"Month": "2023-04", "AvgDelivery": 21.01, "SLABreach": 51.1, "SLA15": 29.9}, {"Month": "2023-05", "AvgDelivery": 21.48, "SLABreach": 53.93, "SLA15": 27.62}, {"Month": "2023-06", "AvgDelivery": 21.42, "SLABreach": 53.93, "SLA15": 29.65}, {"Month": "2023-07", "AvgDelivery": 21.85, "SLABreach": 55.43, "SLA15": 27.44}, {"Month": "2023-08", "AvgDelivery": 21.43, "SLABreach": 53.94, "SLA15": 28.99}, {"Month": "2023-09", "AvgDelivery": 21.55, "SLABreach": 53.52, "SLA15": 29.01}, {"Month": "2023-10", "AvgDelivery": 21.58, "SLABreach": 54.26, "SLA15": 27.96}, {"Month": "2023-11", "AvgDelivery": 21.42, "SLABreach": 53.92, "SLA15": 28.43}, {"Month": "2023-12", "AvgDelivery": 21.53, "SLABreach": 52.75, "SLA15": 29.19}, {"Month": "2024-01", "AvgDelivery": 21.91, "SLABreach": 56.11, "SLA15": 27.36}, {"Month": "2024-02", "AvgDelivery": 21.59, "SLABreach": 54.39, "SLA15": 28.24}, {"Month": "2024-03", "AvgDelivery": 21.32, "SLABreach": 51.52, "SLA15": 28.97}, {"Month": "2024-04", "AvgDelivery": 21.4, "SLABreach": 53.65, "SLA15": 29.48}, {"Month": "2024-05", "AvgDelivery": 21.5, "SLABreach": 52.57, "SLA15": 28.11}, {"Month": "2024-06", "AvgDelivery": 21.45, "SLABreach": 52.93, "SLA15": 29.15}, {"Month": "2024-07", "AvgDelivery": 22.21, "SLABreach": 53.85, "SLA15": 25.0}], "sku_rev": [{"Product_Name": "Mamy Poko Pants XL", "Category": "Baby Care", "Revenue": 3587350, "Units": 5519, "GP": 1255572.5, "Margin": 35.0}, {"Product_Name": "Salmon Fillet 200g", "Category": "Meat & Seafood", "Revenue": 2898480, "Units": 5574, "GP": 579696.0, "Margin": 20.0}, {"Product_Name": "Mutton Keema 500g", "Category": "Meat & Seafood", "Revenue": 2634730, "Units": 5377, "GP": 526946.0, "Margin": 20.0}, {"Product_Name": "India Gate Basmati Rice 5kg", "Category": "Staples & Kitchen", "Revenue": 2406150, "Units": 5347, "GP": 384984.0, "Margin": 16.0}, {"Product_Name": "Pampers Pants M (14pcs)", "Category": "Baby Care", "Revenue": 2405920, "Units": 5468, "GP": 842072.0, "Margin": 35.0}, {"Product_Name": "Gillette Fusion Blades", "Category": "Personal Care", "Revenue": 2207025, "Units": 5193, "GP": 706248.0, "Margin": 32.0}, {"Product_Name": "Prawns 250g", "Category": "Meat & Seafood", "Revenue": 2135600, "Units": 5620, "GP": 427120.0, "Margin": 20.0}, {"Product_Name": "Ariel Matic 2kg", "Category": "Household", "Revenue": 2124705, "Units": 5379, "GP": 531176.25, "Margin": 25.0}, {"Product_Name": "Huggies Diapers S (20pcs)", "Category": "Baby Care", "Revenue": 2121540, "Units": 5583, "GP": 742539.0, "Margin": 35.0}, {"Product_Name": "Fish Fillet 500g", "Category": "Meat & Seafood", "Revenue": 1613560, "Units": 5564, "GP": 322712.0, "Margin": 20.0}, {"Product_Name": "Aashirvaad Atta 5kg", "Category": "Staples & Kitchen", "Revenue": 1429920, "Units": 5296, "GP": 228787.2, "Margin": 16.0}, {"Product_Name": "Amul Butter 500g", "Category": "Dairy & Breakfast", "Revenue": 1345050, "Units": 5490, "GP": 242109.0, "Margin": 18.0}], "seg_stats": [{"Segment": "Bronze", "Customers": 2768, "TotalSpend": 11638109.56, "AvgLTV": 4204.52, "AvgOrders": 3.38}, {"Segment": "Gold", "Customers": 1557, "TotalSpend": 6600848.48, "AvgLTV": 4239.47, "AvgOrders": 3.42}, {"Segment": "Silver", "Customers": 3480, "TotalSpend": 14529928.42, "AvgLTV": 4175.27, "AvgOrders": 3.39}], "rfm_seg": [{"Segment": "At Risk", "Count": 2078, "AvgLTV": 1846.54}, {"Segment": "Active", "Count": 2583, "AvgLTV": 3518.67}, {"Segment": "Champions", "Count": 3042, "AvgLTV": 6523.03}], "ret_reason": [{"Return_Reason": "Damaged Product", "Count": 244, "Refund": 64958.56}, {"Return_Reason": "Wrong Item", "Count": 241, "Refund": 65072.03}, {"Return_Reason": "Expired Product", "Count": 235, "Refund": 65959.9}, {"Return_Reason": "Quality Issue", "Count": 234, "Refund": 64748.91}, {"Return_Reason": "Changed Mind", "Count": 229, "Refund": 65029.13}], "store_perf_top": [{"Dark_Store_ID": "DS067", "Orders": 260, "Revenue": 313655.87, "AvgDelivery": 21.39, "AvgRating": 3.99, "City": "Hyderabad", "Zone": "Gachibowli", "Monthly_Orders_Capacity": 4778, "Utilisation": 3.6}, {"Dark_Store_ID": "DS034", "Orders": 248, "Revenue": 315599.59, "AvgDelivery": 21.19, "AvgRating": 3.98, "City": "Hyderabad", "Zone": "Gachibowli", "Monthly_Orders_Capacity": 3249, "Utilisation": 5.1}, {"Dark_Store_ID": "DS096", "Orders": 248, "Revenue": 299808.93, "AvgDelivery": 21.87, "AvgRating": 3.95, "City": "Chennai", "Zone": "Anna Nagar", "Monthly_Orders_Capacity": 7708, "Utilisation": 2.1}, {"Dark_Store_ID": "DS084", "Orders": 245, "Revenue": 294427.23, "AvgDelivery": 20.76, "AvgRating": 3.99, "City": "Bengaluru", "Zone": "Indiranagar", "Monthly_Orders_Capacity": 9193, "Utilisation": 1.8}, {"Dark_Store_ID": "DS006", "Orders": 244, "Revenue": 297934.83, "AvgDelivery": 21.2, "AvgRating": 3.98, "City": "Mumbai", "Zone": "Bandra", "Monthly_Orders_Capacity": 3310, "Utilisation": 4.9}, {"Dark_Store_ID": "DS038", "Orders": 244, "Revenue": 302294.69, "AvgDelivery": 21.75, "AvgRating": 3.96, "City": "Mumbai", "Zone": "Worli", "Monthly_Orders_Capacity": 7433, "Utilisation": 2.2}, {"Dark_Store_ID": "DS083", "Orders": 243, "Revenue": 298494.37, "AvgDelivery": 20.69, "AvgRating": 3.99, "City": "Mumbai", "Zone": "Andheri", "Monthly_Orders_Capacity": 10604, "Utilisation": 1.5}, {"Dark_Store_ID": "DS114", "Orders": 243, "Revenue": 319617.15, "AvgDelivery": 20.9, "AvgRating": 4.08, "City": "Chennai", "Zone": "Anna Nagar", "Monthly_Orders_Capacity": 10983, "Utilisation": 1.5}, {"Dark_Store_ID": "DS111", "Orders": 241, "Revenue": 302822.71, "AvgDelivery": 21.69, "AvgRating": 4.0, "City": "Bengaluru", "Zone": "HSR Layout", "Monthly_Orders_Capacity": 10501, "Utilisation": 1.5}, {"Dark_Store_ID": "DS011", "Orders": 240, "Revenue": 289024.01, "AvgDelivery": 20.78, "AvgRating": 4.07, "City": "Chennai", "Zone": "Adyar", "Monthly_Orders_Capacity": 9558, "Utilisation": 1.7}], "store_perf_fast": [{"Dark_Store_ID": "DS004", "Orders": 222, "Revenue": 274181.68, "AvgDelivery": 20.06, "AvgRating": 4.0, "City": "Kolkata", "Zone": "Salt Lake", "Monthly_Orders_Capacity": 10119, "Utilisation": 1.5}, {"Dark_Store_ID": "DS086", "Orders": 240, "Revenue": 287330.1, "AvgDelivery": 20.25, "AvgRating": 4.06, "City": "Pune", "Zone": "Wakad", "Monthly_Orders_Capacity": 11557, "Utilisation": 1.4}, {"Dark_Store_ID": "DS109", "Orders": 213, "Revenue": 254252.68, "AvgDelivery": 20.4, "AvgRating": 4.01, "City": "Mumbai", "Zone": "Worli", "Monthly_Orders_Capacity": 5461, "Utilisation": 2.6}, {"Dark_Store_ID": "DS105", "Orders": 217, "Revenue": 263174.39, "AvgDelivery": 20.55, "AvgRating": 4.09, "City": "Kolkata", "Zone": "New Town", "Monthly_Orders_Capacity": 10919, "Utilisation": 1.3}, {"Dark_Store_ID": "DS070", "Orders": 202, "Revenue": 263855.98, "AvgDelivery": 20.67, "AvgRating": 3.97, "City": "Kolkata", "Zone": "Salt Lake", "Monthly_Orders_Capacity": 10031, "Utilisation": 1.3}, {"Dark_Store_ID": "DS083", "Orders": 243, "Revenue": 298494.37, "AvgDelivery": 20.69, "AvgRating": 3.99, "City": "Mumbai", "Zone": "Andheri", "Monthly_Orders_Capacity": 10604, "Utilisation": 1.5}, {"Dark_Store_ID": "DS084", "Orders": 245, "Revenue": 294427.23, "AvgDelivery": 20.76, "AvgRating": 3.99, "City": "Bengaluru", "Zone": "Indiranagar", "Monthly_Orders_Capacity": 9193, "Utilisation": 1.8}, {"Dark_Store_ID": "DS011", "Orders": 240, "Revenue": 289024.01, "AvgDelivery": 20.78, "AvgRating": 4.07, "City": "Chennai", "Zone": "Adyar", "Monthly_Orders_Capacity": 9558, "Utilisation": 1.7}, {"Dark_Store_ID": "DS029", "Orders": 236, "Revenue": 271307.55, "AvgDelivery": 20.8, "AvgRating": 3.99, "City": "Bengaluru", "Zone": "Koramangala", "Monthly_Orders_Capacity": 9405, "Utilisation": 1.7}, {"Dark_Store_ID": "DS037", "Orders": 239, "Revenue": 304416.08, "AvgDelivery": 20.82, "AvgRating": 3.94, "City": "Hyderabad", "Zone": "Gachibowli", "Monthly_Orders_Capacity": 7869, "Utilisation": 2.0}], "store_perf_all": [{"Dark_Store_ID": "DS067", "Orders": 260, "Revenue": 313655.87, "AvgDelivery": 21.39, "AvgRating": 3.99, "City": "Hyderabad", "Zone": "Gachibowli", "Monthly_Orders_Capacity": 4778, "Utilisation": 3.6}, {"Dark_Store_ID": "DS034", "Orders": 248, "Revenue": 315599.59, "AvgDelivery": 21.19, "AvgRating": 3.98, "City": "Hyderabad", "Zone": "Gachibowli", "Monthly_Orders_Capacity": 3249, "Utilisation": 5.1}, {"Dark_Store_ID": "DS096", "Orders": 248, "Revenue": 299808.93, "AvgDelivery": 21.87, "AvgRating": 3.95, "City": "Chennai", "Zone": "Anna Nagar", "Monthly_Orders_Capacity": 7708, "Utilisation": 2.1}, {"Dark_Store_ID": "DS084", "Orders": 245, "Revenue": 294427.23, "AvgDelivery": 20.76, "AvgRating": 3.99, "City": "Bengaluru", "Zone": "Indiranagar", "Monthly_Orders_Capacity": 9193, "Utilisation": 1.8}, {"Dark_Store_ID": "DS006", "Orders": 244, "Revenue": 297934.83, "AvgDelivery": 21.2, "AvgRating": 3.98, "City": "Mumbai", "Zone": "Bandra", "Monthly_Orders_Capacity": 3310, "Utilisation": 4.9}, {"Dark_Store_ID": "DS038", "Orders": 244, "Revenue": 302294.69, "AvgDelivery": 21.75, "AvgRating": 3.96, "City": "Mumbai", "Zone": "Worli", "Monthly_Orders_Capacity": 7433, "Utilisation": 2.2}, {"Dark_Store_ID": "DS083", "Orders": 243, "Revenue": 298494.37, "AvgDelivery": 20.69, "AvgRating": 3.99, "City": "Mumbai", "Zone": "Andheri", "Monthly_Orders_Capacity": 10604, "Utilisation": 1.5}, {"Dark_Store_ID": "DS114", "Orders": 243, "Revenue": 319617.15, "AvgDelivery": 20.9, "AvgRating": 4.08, "City": "Chennai", "Zone": "Anna Nagar", "Monthly_Orders_Capacity": 10983, "Utilisation": 1.5}, {"Dark_Store_ID": "DS111", "Orders": 241, "Revenue": 302822.71, "AvgDelivery": 21.69, "AvgRating": 4.0, "City": "Bengaluru", "Zone": "HSR Layout", "Monthly_Orders_Capacity": 10501, "Utilisation": 1.5}, {"Dark_Store_ID": "DS011", "Orders": 240, "Revenue": 289024.01, "AvgDelivery": 20.78, "AvgRating": 4.07, "City": "Chennai", "Zone": "Adyar", "Monthly_Orders_Capacity": 9558, "Utilisation": 1.7}, {"Dark_Store_ID": "DS086", "Orders": 240, "Revenue": 287330.1, "AvgDelivery": 20.25, "AvgRating": 4.06, "City": "Pune", "Zone": "Wakad", "Monthly_Orders_Capacity": 11557, "Utilisation": 1.4}, {"Dark_Store_ID": "DS037", "Orders": 239, "Revenue": 304416.08, "AvgDelivery": 20.82, "AvgRating": 3.94, "City": "Hyderabad", "Zone": "Gachibowli", "Monthly_Orders_Capacity": 7869, "Utilisation": 2.0}, {"Dark_Store_ID": "DS005", "Orders": 238, "Revenue": 281896.73, "AvgDelivery": 22.17, "AvgRating": 3.97, "City": "Pune", "Zone": "Hinjewadi", "Monthly_Orders_Capacity": 7986, "Utilisation": 2.0}, {"Dark_Store_ID": "DS082", "Orders": 238, "Revenue": 291397.71, "AvgDelivery": 22.07, "AvgRating": 3.94, "City": "Hyderabad", "Zone": "Jubilee Hills", "Monthly_Orders_Capacity": 7654, "Utilisation": 2.1}, {"Dark_Store_ID": "DS041", "Orders": 237, "Revenue": 290496.86, "AvgDelivery": 21.94, "AvgRating": 4.0, "City": "Hyderabad", "Zone": "Hitech City", "Monthly_Orders_Capacity": 4964, "Utilisation": 3.2}, {"Dark_Store_ID": "DS055", "Orders": 237, "Revenue": 297265.33, "AvgDelivery": 21.21, "AvgRating": 4.0, "City": "Bengaluru", "Zone": "HSR Layout", "Monthly_Orders_Capacity": 4688, "Utilisation": 3.4}, {"Dark_Store_ID": "DS029", "Orders": 236, "Revenue": 271307.55, "AvgDelivery": 20.8, "AvgRating": 3.99, "City": "Bengaluru", "Zone": "Koramangala", "Monthly_Orders_Capacity": 9405, "Utilisation": 1.7}, {"Dark_Store_ID": "DS080", "Orders": 236, "Revenue": 293893.68, "AvgDelivery": 21.75, "AvgRating": 3.98, "City": "Chennai", "Zone": "Nungambakkam", "Monthly_Orders_Capacity": 9682, "Utilisation": 1.6}, {"Dark_Store_ID": "DS044", "Orders": 234, "Revenue": 280829.66, "AvgDelivery": 21.59, "AvgRating": 3.93, "City": "Kolkata", "Zone": "Salt Lake", "Monthly_Orders_Capacity": 6810, "Utilisation": 2.3}, {"Dark_Store_ID": "DS049", "Orders": 234, "Revenue": 304121.72, "AvgDelivery": 21.97, "AvgRating": 4.01, "City": "Pune", "Zone": "Kothrud", "Monthly_Orders_Capacity": 6491, "Utilisation": 2.4}, {"Dark_Store_ID": "DS091", "Orders": 234, "Revenue": 286886.81, "AvgDelivery": 22.21, "AvgRating": 4.03, "City": "Ahmedabad", "Zone": "Paldi", "Monthly_Orders_Capacity": 9692, "Utilisation": 1.6}, {"Dark_Store_ID": "DS101", "Orders": 234, "Revenue": 297947.97, "AvgDelivery": 22.3, "AvgRating": 4.03, "City": "Ahmedabad", "Zone": "Satellite", "Monthly_Orders_Capacity": 8401, "Utilisation": 1.9}, {"Dark_Store_ID": "DS015", "Orders": 233, "Revenue": 294649.91, "AvgDelivery": 21.19, "AvgRating": 4.01, "City": "Kolkata", "Zone": "Alipore", "Monthly_Orders_Capacity": 5309, "Utilisation": 2.9}, {"Dark_Store_ID": "DS032", "Orders": 233, "Revenue": 287134.29, "AvgDelivery": 21.41, "AvgRating": 4.02, "City": "Ahmedabad", "Zone": "Vastrapur", "Monthly_Orders_Capacity": 6988, "Utilisation": 2.2}, {"Dark_Store_ID": "DS043", "Orders": 233, "Revenue": 304059.64, "AvgDelivery": 21.92, "AvgRating": 4.03, "City": "Hyderabad", "Zone": "Madhapur", "Monthly_Orders_Capacity": 5447, "Utilisation": 2.9}], "cust_type": [{"Month": "2023-01", "IsNew": true, "Customers": 1570, "Type": "New"}, {"Month": "2023-02", "IsNew": false, "Customers": 293, "Type": "Returning"}, {"Month": "2023-02", "IsNew": true, "Customers": 1101, "Type": "New"}, {"Month": "2023-03", "IsNew": false, "Customers": 550, "Type": "Returning"}, {"Month": "2023-03", "IsNew": true, "Customers": 986, "Type": "New"}, {"Month": "2023-04", "IsNew": false, "Customers": 648, "Type": "Returning"}, {"Month": "2023-04", "IsNew": true, "Customers": 822, "Type": "New"}, {"Month": "2023-05", "IsNew": false, "Customers": 855, "Type": "Returning"}, {"Month": "2023-05", "IsNew": true, "Customers": 619, "Type": "New"}, {"Month": "2023-06", "IsNew": false, "Customers": 959, "Type": "Returning"}, {"Month": "2023-06", "IsNew": true, "Customers": 524, "Type": "New"}, {"Month": "2023-07", "IsNew": false, "Customers": 1060, "Type": "Returning"}, {"Month": "2023-07", "IsNew": true, "Customers": 444, "Type": "New"}, {"Month": "2023-08", "IsNew": false, "Customers": 1179, "Type": "Returning"}, {"Month": "2023-08", "IsNew": true, "Customers": 376, "Type": "New"}, {"Month": "2023-09", "IsNew": false, "Customers": 1204, "Type": "Returning"}, {"Month": "2023-09", "IsNew": true, "Customers": 279, "Type": "New"}, {"Month": "2023-10", "IsNew": false, "Customers": 1270, "Type": "Returning"}, {"Month": "2023-10", "IsNew": true, "Customers": 231, "Type": "New"}, {"Month": "2023-11", "IsNew": false, "Customers": 1273, "Type": "Returning"}, {"Month": "2023-11", "IsNew": true, "Customers": 197, "Type": "New"}, {"Month": "2023-12", "IsNew": false, "Customers": 1353, "Type": "Returning"}, {"Month": "2023-12", "IsNew": true, "Customers": 148, "Type": "New"}, {"Month": "2024-01", "IsNew": false, "Customers": 1381, "Type": "Returning"}, {"Month": "2024-01", "IsNew": true, "Customers": 141, "Type": "New"}, {"Month": "2024-02", "IsNew": false, "Customers": 1354, "Type": "Returning"}, {"Month": "2024-02", "IsNew": true, "Customers": 88, "Type": "New"}, {"Month": "2024-03", "IsNew": false, "Customers": 1412, "Type": "Returning"}, {"Month": "2024-03", "IsNew": true, "Customers": 88, "Type": "New"}, {"Month": "2024-04", "IsNew": false, "Customers": 1437, "Type": "Returning"}, {"Month": "2024-04", "IsNew": true, "Customers": 84, "Type": "New"}, {"Month": "2024-05", "IsNew": false, "Customers": 1464, "Type": "Returning"}, {"Month": "2024-05", "IsNew": true, "Customers": 63, "Type": "New"}, {"Month": "2024-06", "IsNew": false, "Customers": 1455, "Type": "Returning"}, {"Month": "2024-06", "IsNew": true, "Customers": 43, "Type": "New"}, {"Month": "2024-07", "IsNew": false, "Customers": 111, "Type": "Returning"}, {"Month": "2024-07", "IsNew": true, "Customers": 1, "Type": "New"}], "zone_rev": [{"City": "Mumbai", "Zone": "Andheri", "Revenue": 918915.0, "Orders": 735}, {"City": "Mumbai", "Zone": "Juhu", "Revenue": 879564.0, "Orders": 707}, {"City": "Ahmedabad", "Zone": "Bodakdev", "Revenue": 875622.0, "Orders": 702}, {"City": "Hyderabad", "Zone": "Hitech City", "Revenue": 872041.0, "Orders": 687}, {"City": "Delhi", "Zone": "Rohini", "Revenue": 870091.0, "Orders": 670}, {"City": "Pune", "Zone": "Koregaon Park", "Revenue": 869356.0, "Orders": 698}, {"City": "Kolkata", "Zone": "New Town", "Revenue": 864388.0, "Orders": 702}, {"City": "Hyderabad", "Zone": "Jubilee Hills", "Revenue": 849785.0, "Orders": 696}, {"City": "Chennai", "Zone": "Velachery", "Revenue": 849744.0, "Orders": 665}, {"City": "Ahmedabad", "Zone": "Navrangpura", "Revenue": 842841.0, "Orders": 684}, {"City": "Delhi", "Zone": "Lajpat Nagar", "Revenue": 838861.0, "Orders": 653}, {"City": "Chennai", "Zone": "T Nagar", "Revenue": 837469.0, "Orders": 664}, {"City": "Ahmedabad", "Zone": "Paldi", "Revenue": 836462.0, "Orders": 663}, {"City": "Pune", "Zone": "Viman Nagar", "Revenue": 834697.0, "Orders": 676}, {"City": "Pune", "Zone": "Hinjewadi", "Revenue": 834612.0, "Orders": 685}, {"City": "Kolkata", "Zone": "Park Street", "Revenue": 830793.0, "Orders": 668}, {"City": "Mumbai", "Zone": "Bandra", "Revenue": 829159.0, "Orders": 664}, {"City": "Pune", "Zone": "Kothrud", "Revenue": 826184.0, "Orders": 667}, {"City": "Hyderabad", "Zone": "Gachibowli", "Revenue": 819549.0, "Orders": 660}, {"City": "Chennai", "Zone": "Adyar", "Revenue": 817509.0, "Orders": 647}], "weekly": [{"Week": "2023-W01", "Orders": 376, "Revenue": 461215.44}, {"Week": "2023-W02", "Orders": 411, "Revenue": 529912.27}, {"Week": "2023-W03", "Orders": 376, "Revenue": 457251.75}, {"Week": "2023-W04", "Orders": 390, "Revenue": 486637.43}, {"Week": "2023-W05", "Orders": 393, "Revenue": 450757.57}, {"Week": "2023-W06", "Orders": 354, "Revenue": 442860.2}, {"Week": "2023-W07", "Orders": 400, "Revenue": 506162.65}, {"Week": "2023-W08", "Orders": 397, "Revenue": 488046.21}, {"Week": "2023-W09", "Orders": 371, "Revenue": 455685.55}, {"Week": "2023-W10", "Orders": 413, "Revenue": 510874.26}, {"Week": "2023-W11", "Orders": 361, "Revenue": 441954.86}, {"Week": "2023-W12", "Orders": 387, "Revenue": 487749.43}, {"Week": "2023-W13", "Orders": 397, "Revenue": 490616.21}, {"Week": "2023-W14", "Orders": 366, "Revenue": 444925.23}, {"Week": "2023-W15", "Orders": 393, "Revenue": 492726.27}, {"Week": "2023-W16", "Orders": 387, "Revenue": 493378.32}, {"Week": "2023-W17", "Orders": 373, "Revenue": 447106.05}, {"Week": "2023-W18", "Orders": 391, "Revenue": 477995.03}, {"Week": "2023-W19", "Orders": 357, "Revenue": 445916.66}, {"Week": "2023-W20", "Orders": 389, "Revenue": 469857.97}, {"Week": "2023-W21", "Orders": 379, "Revenue": 473642.68}, {"Week": "2023-W22", "Orders": 335, "Revenue": 406659.03}, {"Week": "2023-W23", "Orders": 392, "Revenue": 475250.01}, {"Week": "2023-W24", "Orders": 390, "Revenue": 469198.78}, {"Week": "2023-W25", "Orders": 375, "Revenue": 487239.31}, {"Week": "2023-W26", "Orders": 387, "Revenue": 480578.97}, {"Week": "2023-W27", "Orders": 403, "Revenue": 500745.38}, {"Week": "2023-W28", "Orders": 383, "Revenue": 470247.82}, {"Week": "2023-W29", "Orders": 392, "Revenue": 514266.68}, {"Week": "2023-W30", "Orders": 350, "Revenue": 427138.8}, {"Week": "2023-W31", "Orders": 386, "Revenue": 460087.02}, {"Week": "2023-W32", "Orders": 394, "Revenue": 482738.65}, {"Week": "2023-W33", "Orders": 407, "Revenue": 499706.33}, {"Week": "2023-W34", "Orders": 389, "Revenue": 490382.47}, {"Week": "2023-W35", "Orders": 353, "Revenue": 438483.34}, {"Week": "2023-W36", "Orders": 384, "Revenue": 472278.04}, {"Week": "2023-W37", "Orders": 382, "Revenue": 490718.44}, {"Week": "2023-W38", "Orders": 353, "Revenue": 449514.6}, {"Week": "2023-W39", "Orders": 394, "Revenue": 490701.39}, {"Week": "2023-W40", "Orders": 385, "Revenue": 485042.86}, {"Week": "2023-W41", "Orders": 363, "Revenue": 465513.94}, {"Week": "2023-W42", "Orders": 378, "Revenue": 494341.32}, {"Week": "2023-W43", "Orders": 392, "Revenue": 474216.29}, {"Week": "2023-W44", "Orders": 390, "Revenue": 485787.77}, {"Week": "2023-W45", "Orders": 379, "Revenue": 450710.37}, {"Week": "2023-W46", "Orders": 377, "Revenue": 457575.27}, {"Week": "2023-W47", "Orders": 378, "Revenue": 460095.98}, {"Week": "2023-W48", "Orders": 373, "Revenue": 430556.28}, {"Week": "2023-W49", "Orders": 371, "Revenue": 456586.74}, {"Week": "2023-W50", "Orders": 386, "Revenue": 474791.5}, {"Week": "2023-W51", "Orders": 365, "Revenue": 463622.66}, {"Week": "2023-W52", "Orders": 383, "Revenue": 483429.84}, {"Week": "2023-W53", "Orders": 58, "Revenue": 72194.52}, {"Week": "2024-W00", "Orders": 319, "Revenue": 407088.99}, {"Week": "2024-W01", "Orders": 388, "Revenue": 498681.37}, {"Week": "2024-W02", "Orders": 395, "Revenue": 490496.62}, {"Week": "2024-W03", "Orders": 372, "Revenue": 464804.94}, {"Week": "2024-W04", "Orders": 398, "Revenue": 503947.2}, {"Week": "2024-W05", "Orders": 358, "Revenue": 431130.12}, {"Week": "2024-W06", "Orders": 381, "Revenue": 468712.1}, {"Week": "2024-W07", "Orders": 373, "Revenue": 449203.71}, {"Week": "2024-W08", "Orders": 423, "Revenue": 535591.67}, {"Week": "2024-W09", "Orders": 367, "Revenue": 449621.19}, {"Week": "2024-W10", "Orders": 402, "Revenue": 501928.94}, {"Week": "2024-W11", "Orders": 374, "Revenue": 455516.36}, {"Week": "2024-W12", "Orders": 376, "Revenue": 448607.01}, {"Week": "2024-W13", "Orders": 358, "Revenue": 454412.88}, {"Week": "2024-W14", "Orders": 399, "Revenue": 466932.79}, {"Week": "2024-W15", "Orders": 404, "Revenue": 517575.61}, {"Week": "2024-W16", "Orders": 409, "Revenue": 485697.03}, {"Week": "2024-W17", "Orders": 365, "Revenue": 458327.41}, {"Week": "2024-W18", "Orders": 358, "Revenue": 455314.66}, {"Week": "2024-W19", "Orders": 416, "Revenue": 505014.92}, {"Week": "2024-W20", "Orders": 389, "Revenue": 487104.53}, {"Week": "2024-W21", "Orders": 397, "Revenue": 486392.08}, {"Week": "2024-W22", "Orders": 402, "Revenue": 489247.75}, {"Week": "2024-W23", "Orders": 375, "Revenue": 441473.31}, {"Week": "2024-W24", "Orders": 390, "Revenue": 465938.37}], "age_stats": [{"Age_Group": "18-24", "Customers": 1547, "AvgLTV": 4206.4}, {"Age_Group": "25-34", "Customers": 1556, "AvgLTV": 4196.32}, {"Age_Group": "35-44", "Customers": 1595, "AvgLTV": 4245.2}, {"Age_Group": "45-54", "Customers": 1542, "AvgLTV": 4174.96}, {"Age_Group": "55+", "Customers": 1565, "AvgLTV": 4168.2}], "promo_analysis": [{"HasPromo": false, "Orders": 11207, "AvgAOV": 1236.93, "AvgDiscount": 57.08, "CancelRate": 8.18, "Label": "No Promo"}, {"HasPromo": true, "Orders": 18793, "AvgAOV": 1235.43, "AvgDiscount": 57.15, "CancelRate": 7.68, "Label": "With Promo"}]};
+
+// ═══ CHART DEFAULTS ══════════════════════════════════════════
+Chart.defaults.color='#7878A0';
+Chart.defaults.font.family='DM Sans,sans-serif';
+Chart.defaults.font.size=10;
+const GR={color:'rgba(255,255,255,0.045)',drawBorder:false};
+const TT={backgroundColor:'#1A1A2A',borderColor:'rgba(255,255,255,.08)',borderWidth:1,
+  titleColor:'#EEEEF5',bodyColor:'#7878A0',padding:10,cornerRadius:8,
+  titleFont:{family:'Space Grotesk',weight:'600',size:12}};
+const PAL=['#FFDA00','#22C55E','#60A5FA','#FB923C','#A78BFA','#2DD4BF','#F43F5E','#FBBF24'];
+
+// ═══ HELPERS ══════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const fmt = n => n>=1e6?'₹'+(n/1e6).toFixed(1)+'M':n>=1e3?'₹'+(n/1e3).toFixed(0)+'K':'₹'+n;
+const fmtN = n => n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':''+n;
+
+function kpiHtml(label,val,sub,accentColor,badge='',badgeCls='badge-neu'){
+  return `<div class="kpi"><div class="kpi-accent" style="background:${accentColor}"></div>
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-val">${val}</div>
+    <div class="kpi-sub">${sub}</div>
+    ${badge?`<div class="kpi-badge ${badgeCls}">${badge}</div>`:''}
+  </div>`;
+}
+
+// ═══ NAV ══════════════════════════════════════════════════════
+const PAGE_META={
+  executive:['Executive Summary','18-month overview · Jan 2023 – Jul 2024'],
+  sales:['Sales & Revenue','Trends, AOV, heatmap and promo analysis'],
+  customers:['Customer 360','RFM, LTV, cohorts and churn signals'],
+  products:['Product Intelligence','Margins, SKU velocity and returns'],
+  operations:['Operations & SLA','Dark store performance and delivery health'],
+  insights:['Insights & Recommendations','Evidence-based actions with impact estimates'],
+  datamodel:['Data Model & Lifecycle','Star schema, tables, DAX and Power BI guide'],
+};
+function gp(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('page-'+id).classList.add('active');
+  el.classList.add('active');
+  $('tb-title').textContent=PAGE_META[id][0];
+  $('tb-sub').textContent=PAGE_META[id][1];
+}
+function applyFilter(){ /* filter placeholder */ }
+function resetFilter(){ $('f-city').value='all'; }
+
+// ═══ CHART HELPERS ════════════════════════════════════════════
+let charts={};
+function mkChart(id,cfg){
+  const el=$(id);
+  if(!el)return;
+  if(charts[id])charts[id].destroy();
+  charts[id]=new Chart(el,cfg);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD ALL PAGES
+// ═══════════════════════════════════════════════════════════════
+
+// ── EXECUTIVE ─────────────────────────────────────────────────
+function buildExecutive(){
+  const k=D.kpis;
+  $('exec-kpis').innerHTML=[
+    kpiHtml('Total GMV','₹'+k.total_gmv+'M','Gross Merchandise Value','#FFDA00','↑ 8.2%','badge-up'),
+    kpiHtml('Net Revenue','₹'+k.total_rev+'M','After discounts','#22C55E','↑ 6.4%','badge-up'),
+    kpiHtml('Total Orders',k.total_orders.toLocaleString(),k.del_orders.toLocaleString()+' delivered','#60A5FA','88.2%','badge-neu'),
+    kpiHtml('Avg Order Value','₹'+k.aov.toLocaleString(),'Per delivered order','#FB923C','↑ 2.3%','badge-up'),
+    kpiHtml('Avg Delivery',k.avg_delivery+' min','Target: <15 min','#F43F5E','⚠ SLA','badge-warn'),
+    kpiHtml('Avg Rating',k.avg_rating+'★','Target: 4.3+','#A78BFA','↓ Below','badge-down'),
+  ].join('');
+
+  const rm=D.rev_month.slice(0,-1);
+  mkChart('c-revtrend',{type:'bar',data:{
+    labels:rm.map(r=>r.Month.replace('20','')),
+    datasets:[
+      {label:'GMV',data:rm.map(r=>r.GMV),backgroundColor:'rgba(255,218,0,.22)',borderColor:'#FFDA00',borderWidth:1.5,borderRadius:3},
+      {label:'Net Revenue',data:rm.map(r=>r.Revenue),backgroundColor:'rgba(34,197,94,.18)',borderColor:'#22C55E',borderWidth:1.5,borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,padding:10}},tooltip:TT},
+    scales:{x:{grid:GR,ticks:{maxRotation:45,font:{size:8}}},y:{grid:GR,ticks:{callback:v=>fmt(v)}}}}});
+
+  mkChart('c-status',{type:'doughnut',data:{
+    labels:D.status_stats.map(r=>r.Order_Status),
+    datasets:[{data:D.status_stats.map(r=>r.Count),backgroundColor:['#F43F5E','#22C55E','#FB923C'],borderWidth:0,hoverOffset:8}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'66%',
+    plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:9,font:{size:9}}},
+      tooltip:{...TT,callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString()} (${D.status_stats[c.dataIndex].Pct}%)`}}}}});
+
+  const cs=[...D.city_stats].sort((a,b)=>b.Revenue-a.Revenue);
+  mkChart('c-cityrev',{type:'bar',data:{labels:cs.map(r=>r.City),
+    datasets:[{label:'Revenue',data:cs.map(r=>r.Revenue),backgroundColor:PAL,borderRadius:4,borderSkipped:false}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${fmt(c.raw)}`}}},
+    scales:{x:{grid:GR,ticks:{callback:v=>fmt(v),font:{size:8}}},y:{grid:{display:false},ticks:{font:{size:9}}}}}});
+
+  mkChart('c-pay',{type:'doughnut',data:{
+    labels:D.pay_stats.map(r=>r.Payment_Method),
+    datasets:[{data:D.pay_stats.map(r=>r.Orders),backgroundColor:PAL,borderWidth:0,hoverOffset:8}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:7,font:{size:9}}},tooltip:TT}}});
+
+  mkChart('c-catpie',{type:'pie',data:{
+    labels:D.cat_stats.map(r=>r.Category),
+    datasets:[{data:D.cat_stats.map(r=>r.Revenue),backgroundColor:PAL,borderWidth:0,hoverOffset:8}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:6,font:{size:8}}},tooltip:{...TT,callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`}}}}});
+}
+
+// ── SALES ─────────────────────────────────────────────────────
+function buildSales(){
+  const k=D.kpis;
+  $('sales-kpis').innerHTML=[
+    kpiHtml('Total GMV','₹'+k.total_gmv+'M','18 months','#FFDA00'),
+    kpiHtml('Gross Margin',k.gm_pct+'%','Blended','#22C55E','↑ Target 22%','badge-up'),
+    kpiHtml('AOV','₹'+k.aov.toLocaleString(),'Per delivered order','#60A5FA'),
+    kpiHtml('Discount Given','₹'+k.total_discount+'M','Total discounts','#FB923C','↓ Margin drain','badge-warn'),
+    kpiHtml('Cancel Rate',k.cancel_rate+'%','Target <5%','#F43F5E','⚠ High','badge-down'),
+  ].join('');
+
+  const rm=D.rev_month.slice(0,-1);
+  mkChart('c-aov',{type:'line',data:{labels:rm.map(r=>r.Month.replace('20','')),
+    datasets:[{label:'AOV (₹)',data:rm.map(r=>r.AOV),borderColor:'#FFDA00',backgroundColor:'rgba(255,218,0,.08)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#FFDA00'}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},
+    scales:{x:{grid:GR,ticks:{maxRotation:45,font:{size:8}}},y:{grid:GR,min:1100,ticks:{callback:v=>'₹'+v}}}}});
+
+  mkChart('c-catbar',{type:'bar',data:{labels:D.cat_stats.map(r=>r.Category),
+    datasets:[
+      {label:'Revenue',data:D.cat_stats.map(r=>r.Revenue),backgroundColor:'rgba(255,218,0,.3)',borderColor:'#FFDA00',borderWidth:1,borderRadius:3},
+      {label:'Gross Profit',data:D.cat_stats.map(r=>r.GrossProfit),backgroundColor:'rgba(34,197,94,.4)',borderColor:'#22C55E',borderWidth:1,borderRadius:3}
+    ]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:9,padding:9}},tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`}}},
+    scales:{x:{grid:GR,ticks:{callback:v=>fmt(v),font:{size:8}}},y:{grid:{display:false},ticks:{font:{size:8}}}}}});
+
+  buildHeatmap();
+
+  const months=[...new Set(D.cust_type.map(r=>r.Month))].sort().slice(0,-1);
+  const newD=months.map(m=>{const r=D.cust_type.find(x=>x.Month===m&&x.IsNew===true);return r?r.Customers:0;});
+  const retD=months.map(m=>{const r=D.cust_type.find(x=>x.Month===m&&x.IsNew===false);return r?r.Customers:0;});
+  mkChart('c-newret',{type:'bar',data:{labels:months.map(m=>m.replace('20','')),
+    datasets:[
+      {label:'New',data:newD,backgroundColor:'rgba(96,165,250,.65)',borderRadius:2},
+      {label:'Returning',data:retD,backgroundColor:'rgba(34,197,94,.45)',borderRadius:2}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,stacked:true,
+    plugins:{legend:{position:'top',labels:{boxWidth:9,padding:9}},tooltip:TT},
+    scales:{x:{stacked:true,grid:GR,ticks:{maxRotation:45,font:{size:8}}},y:{stacked:true,grid:GR}}}});
+
+  mkChart('c-paycancel',{type:'bar',data:{
+    labels:D.pay_stats.map(r=>r.Payment_Method),
+    datasets:[
+      {label:'Orders',data:D.pay_stats.map(r=>r.Orders),backgroundColor:'rgba(96,165,250,.4)',yAxisID:'y',borderRadius:3},
+      {label:'Cancel %',data:D.pay_stats.map(r=>r.CancelRate),backgroundColor:'rgba(244,63,94,.65)',yAxisID:'y1',borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:9,padding:9}},tooltip:TT},
+    scales:{x:{grid:GR,ticks:{font:{size:9}}},y:{grid:GR},y1:{grid:{display:false},position:'right',ticks:{callback:v=>v+'%'}}}}});
+
+  mkChart('c-promo',{type:'bar',data:{
+    labels:D.promo_analysis.map(r=>r.Label),
+    datasets:[
+      {label:'Avg AOV (₹)',data:D.promo_analysis.map(r=>r.AvgAOV),backgroundColor:['rgba(34,197,94,.6)','rgba(251,146,60,.6)'],borderRadius:6,borderSkipped:false},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` Avg AOV: ₹${c.raw.toFixed(0)}`}}},
+    scales:{x:{grid:{display:false}},y:{grid:GR,ticks:{callback:v=>'₹'+v}}}}});
+
+  // Zone table
+  const maxRev=Math.max(...D.zone_rev.map(r=>r.Revenue));
+  $('zone-table').innerHTML=`<table class="tbl"><thead><tr><th>#</th><th>City</th><th>Zone</th><th>Revenue</th><th>Bar</th></tr></thead><tbody>
+  ${D.zone_rev.map((r,i)=>`<tr>
+    <td style="color:var(--muted)">${i+1}</td>
+    <td>${r.City}</td><td style="color:var(--muted)">${r.Zone}</td>
+    <td style="color:var(--yellow);font-family:'Space Grotesk'">${fmt(r.Revenue)}</td>
+    <td><div class="zone-bar" style="width:${(r.Revenue/maxRev*90).toFixed(0)}px"></div></td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+// ── HEATMAP ───────────────────────────────────────────────────
+function buildHeatmap(){
+  const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const all=D.heatmap_data.map(d=>d.orders);
+  const minV=Math.min(...all),maxV=Math.max(...all);
+  const col=t=>`rgb(${Math.round(13+t*242)},${Math.round(13+t*205)},${Math.round(20-t*20)})`;
+  let h=`<div style="display:grid;grid-template-columns:46px repeat(24,1fr);gap:1.5px">`;
+  h+=`<div></div>`;
+  for(let i=0;i<24;i++)h+=`<div style="text-align:center;color:var(--muted);font-size:8px;padding-bottom:2px">${i}</div>`;
+  days.forEach(day=>{
+    h+=`<div style="color:var(--muted);display:flex;align-items:center;font-size:8px;padding-right:4px;white-space:nowrap">${day.slice(0,3)}</div>`;
+    for(let hr=0;hr<24;hr++){
+      const cell=D.heatmap_data.find(d=>d.day===day&&d.hour===hr);
+      const v=cell?cell.orders:0;
+      const t=(v-minV)/(maxV-minV);
+      h+=`<div style="height:15px;border-radius:2px;background:${col(t)}" title="${day} ${hr}:00 — ${v} orders"></div>`;
+    }
+  });
+  h+=`</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:9px;color:var(--muted)">
+    <span>Low (${minV})</span>
+    <div style="flex:1;max-width:140px;height:6px;border-radius:4px;background:linear-gradient(to right,rgb(13,13,20),#FFDA00)"></div>
+    <span>High (${maxV} orders)</span></div>`;
+  $('heatmap-grid').innerHTML=h;
+}
+
+// ── CUSTOMERS ─────────────────────────────────────────────────
+function buildCustomers(){
+  const k=D.kpis;
+  $('cust-kpis').innerHTML=[
+    kpiHtml('Total Customers',k.active_custs.toLocaleString(),'Unique users','#60A5FA'),
+    kpiHtml('Champions','3,042','39% · Avg LTV ₹6,523','#22C55E','↑ High Value','badge-up'),
+    kpiHtml('At Risk','2,078','27% · Need re-engagement','#F43F5E','⚠ Churn Risk','badge-down'),
+    kpiHtml('Avg LTV','₹4,206','Lifetime spend','#FB923C'),
+  ].join('');
+
+  mkChart('c-rfm',{type:'bar',data:{
+    labels:D.rfm_seg.map(r=>r.Segment),
+    datasets:[{label:'Customers',data:D.rfm_seg.map(r=>r.Count),backgroundColor:['#F43F5E','#60A5FA','#22C55E'],borderRadius:7,borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:TT},
+    scales:{x:{grid:{display:false}},y:{grid:GR}}}});
+
+  mkChart('c-ltv',{type:'bar',data:{
+    labels:D.rfm_seg.map(r=>r.Segment),
+    datasets:[{label:'Avg LTV (₹)',data:D.rfm_seg.map(r=>r.AvgLTV),backgroundColor:['rgba(244,63,94,.6)','rgba(96,165,250,.6)','rgba(34,197,94,.6)'],borderRadius:7,borderSkipped:false}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` LTV: ₹${c.raw.toFixed(0)}`}}},
+    scales:{x:{grid:GR,ticks:{callback:v=>'₹'+v}},y:{grid:{display:false}}}}});
+
+  const cols=[{lbl:'Gold',n:'1,557',sub:'₹4,239 LTV',c:'#FFDA00'},{lbl:'Silver',n:'3,480',sub:'₹4,175 LTV',c:'#A78BFA'},
+    {lbl:'Bronze',n:'2,768',sub:'₹4,205 LTV',c:'#FB923C'},{lbl:'Champions',n:'3,042',sub:'₹6,523 LTV',c:'#22C55E'},
+    {lbl:'Active',n:'2,583',sub:'₹3,519 LTV',c:'#60A5FA'},{lbl:'At Risk',n:'2,078',sub:'₹1,847 LTV',c:'#F43F5E'}];
+  $('seg-tiles').innerHTML=cols.map(c=>`<div class="seg-tile">
+    <div class="st-num" style="color:${c.c}">${c.n}</div>
+    <div class="st-lbl">${c.lbl}</div>
+    <div class="st-sub" style="color:${c.c}">${c.sub}</div>
+  </div>`).join('');
+
+  mkChart('c-age',{type:'bar',data:{
+    labels:D.age_stats.map(r=>r.Age_Group),
+    datasets:[{label:'Avg LTV (₹)',data:D.age_stats.map(r=>r.AvgLTV),backgroundColor:PAL,borderRadius:5,borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` LTV: ₹${c.raw.toLocaleString()}`}}},
+    scales:{x:{grid:{display:false}},y:{grid:GR,ticks:{callback:v=>'₹'+v}}}}});
+
+  mkChart('c-seg',{type:'doughnut',data:{
+    labels:D.seg_stats.map(r=>r.Segment),
+    datasets:[{data:D.seg_stats.map(r=>r.Customers),backgroundColor:['#FFDA00','#8888A4','#FB923C'],borderWidth:0,hoverOffset:8}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{position:'bottom',labels:{boxWidth:9,padding:9,font:{size:10}}},tooltip:TT}}});
+}
+
+// ── PRODUCTS ──────────────────────────────────────────────────
+function buildProducts(){
+  const k=D.kpis;
+  $('prod-kpis').innerHTML=[
+    kpiHtml('Total Line Items','1,04,713','Across 48 SKUs','#FFDA00'),
+    kpiHtml('Gross Profit','₹'+k.total_gp+'M','Blended GP','#22C55E','↑ '+k.gm_pct+'%','badge-up'),
+    kpiHtml('Top Category','Meat & Sea','₹11.0M revenue','#FB923C'),
+    kpiHtml('Best Margin','Baby Care','35% gross margin','#60A5FA','↑ Premium','badge-up'),
+    kpiHtml('Worst Margin','Staples','16% — loss leader','#F43F5E','↓ Low','badge-down'),
+  ].join('');
+
+  const marginCols=D.cat_stats.map(r=>r.Margin>=30?'#22C55E':r.Margin>=20?'#FFDA00':'#F43F5E');
+  mkChart('c-catmargin',{type:'bar',data:{
+    labels:D.cat_stats.map(r=>r.Category),
+    datasets:[{label:'Margin %',data:D.cat_stats.map(r=>r.Margin),backgroundColor:marginCols,borderRadius:5,borderSkipped:false}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` Margin: ${c.raw}%`}}},
+    scales:{x:{grid:GR,min:0,max:40,ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:9}}}}}});
+
+  mkChart('c-ret',{type:'bar',data:{
+    labels:D.ret_reason.map(r=>r.Return_Reason),
+    datasets:[
+      {label:'Count',data:D.ret_reason.map(r=>r.Count),backgroundColor:['#F43F5E','#FB923C','#FBBF24','#60A5FA','#A78BFA'],borderRadius:5,borderSkipped:false},
+    ]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:TT},
+    scales:{x:{grid:GR},y:{grid:{display:false},ticks:{font:{size:9}}}}}});
+
+  // SKU table
+  $('sku-tbl').innerHTML=`<thead><tr><th>#</th><th>Product</th><th>Category</th><th>Revenue</th><th>Units</th><th>Gross Profit</th><th>Margin</th></tr></thead><tbody>`+
+    D.sku_rev.map((r,i)=>`<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:500">${r.Product_Name}</td>
+      <td><span class="pill ${i<3?'py':'pb'}">${r.Category.split('&')[0].trim().split(' ')[0]}</span></td>
+      <td style="font-family:'Space Grotesk';color:var(--yellow)">${fmt(r.Revenue)}</td>
+      <td>${r.Units.toLocaleString()}</td>
+      <td style="color:var(--green)">${fmt(r.GP)}</td>
+      <td><span class="pill ${r.Margin>=30?'pg':r.Margin>=20?'py':'pr'}">${r.Margin}%</span></td>
+    </tr>`).join('')+`</tbody>`;
+
+  // Waterfall
+  const maxRev=Math.max(...D.cat_stats.map(r=>r.Revenue));
+  $('waterfall').innerHTML=D.cat_stats.map(r=>{
+    const rPct=(r.Revenue/maxRev*100).toFixed(1);
+    const gPct=(r.GrossProfit/r.Revenue*100).toFixed(1);
+    return `<div class="wf-row">
+      <div class="wf-lbl">${r.Category.split('&')[0].trim()}</div>
+      <div class="wf-track">
+        <div class="wf-bar" style="width:${rPct}%;background:rgba(255,218,0,.25);color:var(--yellow)">${fmt(r.Revenue)}</div>
+      </div>
+      <div style="font-size:9px;color:var(--green);width:38px;text-align:right;flex-shrink:0">${gPct}% GP</div>
+    </div>`;
+  }).join('');
+
+  mkChart('c-units',{type:'doughnut',data:{
+    labels:D.cat_stats.map(r=>r.Category),
+    datasets:[{data:D.cat_stats.map(r=>r.Units),backgroundColor:PAL,borderWidth:0,hoverOffset:8}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'50%',
+    plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:7,font:{size:9}}},tooltip:TT}}});
+}
+
+// ── OPERATIONS ────────────────────────────────────────────────
+function buildOperations(){
+  const k=D.kpis;
+  $('ops-kpis').innerHTML=[
+    kpiHtml('SLA Breach Rate',k.sla_breach+'%','Orders >20 min · Target <10%','#F43F5E','🚨 Critical','badge-down'),
+    kpiHtml('Avg Delivery',k.avg_delivery+' min','Across all stores','#FB923C','Target 15 min','badge-warn'),
+    kpiHtml('Dark Stores','120','Active locations','#22C55E','8 cities','badge-up'),
+    kpiHtml('Avg Rating',k.avg_rating+'★','Customer satisfaction','#A78BFA','Target 4.3+','badge-down'),
+  ].join('');
+
+  const sl=D.sla_month.slice(0,-1);
+  mkChart('c-sla',{type:'line',data:{labels:sl.map(r=>r.Month.replace('20','')),
+    datasets:[
+      {label:'SLA Breach %',data:sl.map(r=>r.SLABreach),borderColor:'#F43F5E',backgroundColor:'rgba(244,63,94,.1)',fill:true,tension:.4,yAxisID:'y',pointRadius:3,pointBackgroundColor:'#F43F5E'},
+      {label:'Avg Delivery (min)',data:sl.map(r=>r.AvgDelivery),borderColor:'#FB923C',backgroundColor:'transparent',tension:.4,yAxisID:'y1',borderDash:[5,4],pointRadius:2,pointBackgroundColor:'#FB923C'}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:9,padding:9}},tooltip:TT},
+    scales:{x:{grid:GR,ticks:{maxRotation:45,font:{size:8}}},
+      y:{grid:GR,position:'left',ticks:{callback:v=>v+'%'}},
+      y1:{grid:{display:false},position:'right',min:19,max:24,ticks:{callback:v=>v+' min'}}}}});
+
+  mkChart('c-citydelivery',{type:'bar',data:{
+    labels:D.city_stats.map(r=>r.City),
+    datasets:[{label:'Avg Delivery',data:D.city_stats.map(r=>r.AvgDelivery),
+      backgroundColor:D.city_stats.map(r=>r.AvgDelivery<21?'#22C55E':r.AvgDelivery<22?'#FFDA00':'#F43F5E'),borderRadius:6,borderSkipped:false}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${c.raw} min`}}},
+    scales:{x:{grid:{display:false}},y:{grid:GR,min:20.5,max:22.5,ticks:{callback:v=>v+' m'}}}}});
+
+  function storeRow(r,fast){return `<tr>
+    <td style="font-family:'Space Grotesk';font-weight:700;color:var(--yellow)">${r.Dark_Store_ID}</td>
+    <td>${r.City}</td><td style="color:var(--muted)">${r.Zone}</td>
+    <td style="font-weight:600">${fast?r.AvgDelivery+' min':r.Orders.toLocaleString()}</td>
+    <td><span class="pill ${r.AvgRating>=4.0?'pg':'po'}">${r.AvgRating}★</span></td>
+  </tr>`;}
+  const hdr=`<thead><tr><th>Store</th><th>City</th><th>Zone</th><th>Value</th><th>Rating</th></tr></thead><tbody>`;
+  $('tbl-topstore').innerHTML=hdr+D.store_perf_top.map(r=>storeRow(r,false)).join('')+'</tbody>';
+  $('tbl-faststore').innerHTML=hdr+D.store_perf_fast.map(r=>storeRow(r,true)).join('')+'</tbody>';
+
+  const sp=D.store_perf_all;
+  mkChart('c-storeperf',{type:'bar',data:{
+    labels:sp.map(r=>r.Dark_Store_ID),
+    datasets:[
+      {label:'Orders',data:sp.map(r=>r.Orders),backgroundColor:'rgba(96,165,250,.45)',yAxisID:'y',borderRadius:2},
+      {label:'Avg Delivery',data:sp.map(r=>r.AvgDelivery),backgroundColor:'rgba(251,146,60,.65)',yAxisID:'y1',borderRadius:2}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:9,padding:9}},tooltip:TT},
+    scales:{x:{grid:{display:false},ticks:{font:{size:7},maxRotation:45}},
+      y:{grid:GR},y1:{grid:{display:false},position:'right',ticks:{callback:v=>v+' m'}}}}});
+}
+
+// ── INSIGHTS ──────────────────────────────────────────────────
+function buildInsights(){
+  $('ins-kpis').innerHTML=[
+    kpiHtml('Critical Issues','2','Immediate action needed','#F43F5E','🚨 Now','badge-down'),
+    kpiHtml('High Priority','5','This quarter','#FB923C','Q3 2024','badge-warn'),
+    kpiHtml('Medium Priority','3','Next quarter','#FFDA00'),
+    kpiHtml('Revenue Opportunity','~₹8M','If all recs adopted','#22C55E','↑ Potential','badge-up'),
+  ].join('');
+
+  const ins=[
+    {i:'⏱',t:'SLA Breach Rate Critical at 53.7%',e:'53.7% of delivered orders exceed the 20-minute SLA target. Monthly trend shows no improvement over 18 months (range: 51–57%). Avg delivery 21.5 min vs 15-min target.',r:'Deploy real-time routing optimisation; add picker capacity at Fri–Sat peak; audit dark stores with >55% breach.',im:'↓ Breach to <20%; ↑ Rating to 4.3+; ↓ churn significantly',p:'c'},
+    {i:'⭐',t:'Customer Rating Below Target (3.99 vs 4.3)',e:'Avg rating 3.99 is 0.31 points below the 4.3 target. Delivery time and damaged product returns are the primary drivers of low ratings.',r:'Address SLA breaches first. Launch post-delivery photo proof; resolve Damaged Product root cause at dark store dispatch.',im:'↑ NPS proxy; ↑ 12-month retention by ~12%',p:'c'},
+    {i:'👶',t:'Baby Care: Highest Margin (35%) — Under-Penetrated',e:'Baby Care has the highest gross margin at 35%, generating ₹3.58M GP on ₹10.2M revenue. However it has low cross-sell penetration relative to Meat & Seafood.',r:'Bundle Baby Care SKUs with high-frequency Dairy orders at checkout. Run "Add Baby Care" A/B test.',im:'↑ Baby Care revenue by 35–40%; ↑ blended margin by ~2pp',p:'h'},
+    {i:'🚫',t:'COD Has Highest Cancellation Rate (8.21%)',e:'Cash on Delivery orders cancel at 8.21% vs Blinkit Wallet at 7.46%. COD also increases last-mile complexity and failed-delivery cost.',r:'Phase out COD for orders < ₹150. Offer ₹10 Blinkit Wallet cashback on UPI payments to shift behaviour.',im:'↓ Cancel rate by 2pp; ↑ delivery efficiency; ↓ failed delivery cost',p:'h'},
+    {i:'💸',t:'35% Promo Orders Risk LTV Dilution',e:'Approximately 35% of all orders use promo codes. Promo-acquired customers typically have 40–50% lower LTV than organic users.',r:'Shift from one-time discount codes to loyalty streaks and category cashback rewards. Cap FIRST10 to ₹299+ orders.',im:'↑ 12-month LTV of new cohorts by ₹400+ avg',p:'h'},
+    {i:'🔴',t:'2,078 Customers At Churn Risk',e:'RFM analysis identifies 2,078 customers (27% of base) as at-risk with avg LTV ₹1,847 — vs Champions at ₹6,523. Revenue at stake: ~₹3.8M.',r:'Trigger reactivation push notification at 20 days of inactivity. Personalise by preferred category. Offer free delivery.',im:'Recovering 20% of at-risk = +₹770K annual revenue',p:'h'},
+    {i:'↩️',t:'F&V Quality Driving Returns',e:'Damaged Product (244), Expired Product (235) and Quality Issue (234) account for 60% of all returns. Fruits & Vegetables is disproportionately represented.',r:'Introduce freshness guarantee at checkout. Improve quality grading at dark store intake. Add photo verification on dispatch.',im:'↓ Return rate by 2pp; ↓ refund cost by ₹1.3L/year',p:'h'},
+    {i:'🏙️',t:'Delhi Delivery Time Highest (21.68 min)',e:'Delhi avg delivery is 21.68 min — highest of all cities. Kolkata follows at 21.73 min. Mumbai performs best at 21.28 min.',r:'Expand dark store density in high-demand Delhi zones (Connaught Place, Lajpat Nagar). Review routing algorithm.',im:'↓ Delhi delivery to <21 min; ↑ Delhi avg rating',p:'m'},
+    {i:'📦',t:'Staples & Kitchen: 16% Margin — Loss Leader Risk',e:'Staples has the lowest gross margin at 16%, well below the 25.2% company average. It likely drives traffic but dilutes profitability.',r:'Bundle Staples with high-margin Baby Care / Personal Care. Pilot weekly auto-replenishment subscription at ₹49/mo.',im:'Maintain traffic while ↑ blended margin by ~1pp',p:'m'},
+    {i:'🔁',t:'Returning Customer Momentum is Strong',e:'New vs Returning chart shows returning customer share grew from <20% in Jan 2023 to >90% by mid-2024. Indicates strong product-market fit.',r:'Sustain retention flywheel. Launch referral program ("Invite a friend, both get ₹50") to top up declining new acquisitions.',im:'↑ Organic CAC efficiency by 20–30%',p:'m'},
+  ];
+  const pm={c:{l:'🔴 Critical',cls:'ic'},h:{l:'🟠 High',cls:'ih'},m:{l:'🟡 Medium',cls:'im2'}};
+  $('insights-list').innerHTML=ins.map(x=>`<div class="insight">
+    <div class="insight-ico" style="background:rgba(255,218,0,.08)">${x.i}</div>
+    <div class="insight-body">
+      <div class="it">${x.t}</div>
+      <div class="ev">${x.e}</div>
+      <div class="rc">→ ${x.r}</div>
+      <div class="im">📊 Expected: ${x.im}</div>
+    </div>
+    <div class="ipri ${pm[x.p].cls}">${pm[x.p].l}</div>
+  </div>`).join('');
+}
+
+// ── DATA MODEL PAGE ───────────────────────────────────────────
+function buildDataModel(){
+  $('schema-viz').innerHTML=`
+  <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+    <div style="background:rgba(255,218,0,.1);border:1px solid rgba(255,218,0,.25);border-radius:7px;padding:8px 12px">
+      <div style="font-family:'Space Grotesk';font-weight:700;color:var(--yellow);font-size:12px;margin-bottom:4px">⭐ FACT: Orders (30,000 rows)</div>
+      <div style="color:var(--muted)">Order_ID · Customer_ID · Dark_Store_ID · Order_Date · Promo_Code · Order_Value · Delivery_Time · Status · Rating</div>
+    </div>
+    <div style="background:rgba(255,218,0,.07);border:1px solid rgba(255,218,0,.15);border-radius:7px;padding:8px 12px">
+      <div style="font-family:'Space Grotesk';font-weight:700;color:rgba(255,218,0,.7);font-size:12px;margin-bottom:4px">⭐ FACT: Order_Items (1,04,713 rows)</div>
+      <div style="color:var(--muted)">Order_ID · Product_Name · Category · Quantity · Unit_Price · Line_Total · COGS · Gross_Profit</div>
+    </div>
+    ${[
+      ['DIM: Customers (7,805)','#60A5FA','Customer_ID · Segment · Age_Group · Gender · City · Signup_Date · LTV'],
+      ['DIM: Products (48)','#22C55E','Product_ID · Product_Name · Category · Brand · Unit_Price · Gross_Margin_Pct'],
+      ['DIM: Dark_Stores (120)','#FB923C','Dark_Store_ID · City · Zone · Area_SqFt · SKU_Count · Staff · Capacity'],
+      ['DIM: Date','#A78BFA','Date · Year · Quarter · Month · Week · IsWeekend · IsPeakHour'],
+      ['DIM: Promotions (5)','#2DD4BF','Promo_Code · Type · Value · Min_Order · Valid_From · Valid_To'],
+    ].map(([n,c,cols])=>`<div style="background:rgba(96,165,250,.05);border:1px solid var(--border);border-radius:7px;padding:8px 12px">
+      <div style="font-family:'Space Grotesk';font-weight:600;color:${c};font-size:11px;margin-bottom:3px">${n}</div>
+      <div style="color:var(--muted);font-size:10px">${cols}</div>
+    </div>`).join('')}
+    <div style="margin-top:4px;font-size:10px;color:var(--muted);line-height:1.6">
+      <strong style="color:var(--text)">Relationships:</strong> All 1:Many from DIM → FACT · Single cross-filter direction · Order_Items linked to Orders via Order_ID
+    </div>
+  </div>`;
+
+  const steps=[
+    ['1 — Ingest','#60A5FA','Source: Transactional DB (orders/OMS), CRM, Inventory WMS, POS returns, Promo engine → staged in Azure Data Lake Gen2. Frequency: near real-time 15-min batch for orders; daily for customers/products.'],
+    ['2 — Transform','#FB923C','Power Query (M) in Power BI Dataflow Gen2. Steps: remove duplicates, parse Order_Date, unify City casing, derive Order_Month/Week/Hour, flag SLA_Breach (>20 min), compute Profit_Margin%.'],
+    ['3 — Model','#FFDA00','Star schema: 2 fact tables (Orders, Order_Items) + 5 dims. Date dim auto-generated. All DAX measures in dedicated Measure table; no calculated columns in fact tables for performance.'],
+    ['4 — Validate','#22C55E','Completeness: 0 orphan Order_IDs. Accuracy: Final_Amount = Order_Value + Fee − Discount (verified). Freshness KPI: alert if max(Order_Date) gap >2 hrs during business hours.'],
+    ['5 — Publish','#A78BFA','Power BI Premium workspace "Blinkit-Analytics-PROD". Incremental refresh on Orders table. Row-Level Security: City Managers see only their city. Dataset certified after monthly audit.'],
+  ];
+  $('lifecycle-viz').innerHTML=steps.map(([n,c,d])=>`
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-start">
+      <div style="background:${c};color:#000;font-family:'Space Grotesk';font-weight:700;font-size:9px;padding:4px 8px;border-radius:5px;flex-shrink:0;margin-top:1px">${n}</div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.5">${d}</div>
+    </div>`).join('');
+
+  const tables=[
+    ['Orders','30,000','Fact','Core order transactions with status, timing, payment'],
+    ['Order_Items','1,04,713','Fact','Line-level SKU data with COGS & Gross Profit'],
+    ['Customers','7,805','Dim','Profile, segment, LTV, age group, city'],
+    ['Products','48','Dim','SKUs with category, brand, MRP, margin %'],
+    ['Dark_Stores','120','Dim','Locations, capacity, avg SLA, staff count'],
+    ['Returns','1,183','Fact','Reason, resolution, refund amount per return'],
+    ['Promotions','5','Dim','Code, type, value, budget, validity window'],
+  ];
+  $('dm-tables').innerHTML=`<table class="tbl"><thead><tr><th>Table</th><th>Rows</th><th>Type</th><th>Description</th></tr></thead><tbody>`+
+    tables.map(([t,r,tp,d])=>`<tr><td style="font-family:'Space Grotesk';font-weight:600;color:var(--yellow)">${t}</td><td style="color:var(--muted)">${r}</td><td><span class="pill ${tp==='Fact'?'py':'pb'}">${tp}</span></td><td style="color:var(--muted)">${d}</td></tr>`).join('')+
+    '</tbody></table>';
+
+  const measures=[
+    ['Total GMV','= SUM(Orders[Order_Value_INR])'],
+    ['Net Revenue','= CALCULATE(SUM(Orders[Final_Amount_INR]),Orders[Order_Status]="Delivered")'],
+    ['AOV','= DIVIDE([Net Revenue],[Total Orders])'],
+    ['Total Orders','= COUNTROWS(Orders)'],
+    ['Cancel Rate','= DIVIDE(CALCULATE([Total Orders],Orders[Order_Status]="Cancelled"),[Total Orders])'],
+    ['SLA Breach %','= DIVIDE(CALCULATE([Delivered Orders],Orders[Delivery_Time_Min]>20),[Delivered Orders])'],
+    ['Gross Margin %','= DIVIDE(SUM(Order_Items[Gross_Profit_INR]),SUM(Order_Items[Line_Total_INR]))'],
+    ['Revenue MoM %','= DIVIDE([Net Revenue]-[Net Revenue LM],[Net Revenue LM])'],
+    ['Avg Delivery','= AVERAGEX(FILTER(Orders,Orders[Order_Status]="Delivered"),Orders[Delivery_Time_Min])'],
+    ['Active Customers','= DISTINCTCOUNT(Orders[Customer_ID])'],
+    ['Avg Rating','= AVERAGEX(FILTER(Orders,NOT ISBLANK(Orders[Customer_Rating])),Orders[Customer_Rating])'],
+    ['Repeat Rate','= DIVIDE([Total Orders]-[Unique Customers],[Unique Customers])'],
+  ];
+  $('dax-list').innerHTML=measures.map(([n,dax])=>`
+    <div style="margin-bottom:7px;padding:6px 10px;background:var(--dark3);border-radius:6px;border-left:2px solid var(--yellow)">
+      <div style="font-family:'Space Grotesk';font-size:10px;font-weight:600;color:var(--yellow);margin-bottom:2px">${n}</div>
+      <code style="font-size:10px;color:var(--teal);font-family:monospace;line-height:1.4">${dax}</code>
+    </div>`).join('');
+}
+
+// ═══ BOOT ════════════════════════════════════════════════════
+buildExecutive();
+buildSales();
+buildCustomers();
+buildProducts();
+buildOperations();
+buildInsights();
+buildDataModel();
+</script>
+</body>
+</html>
